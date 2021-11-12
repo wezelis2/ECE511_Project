@@ -368,7 +368,7 @@ void os_learn_best_offset(t_addr lineaddr)
 // Issue at most one prefetch request. The prefetch line address is obtained by adding
 // the prefetch offset to the current line address
 
-int issue_prefetch(t_addr lineaddr, int offset)
+int CACHE::issue_prefetch(t_addr lineaddr, int offset)
 {
   if (offset == 0) {
     // The prefetcher is currently turned off.
@@ -399,7 +399,7 @@ int issue_prefetch(t_addr lineaddr, int offset)
 //######################################################################################
 
 
-void l2_prefetcher_initialize(int cpu_num)
+void CACHE::l2_prefetcher_initialize(int cpu_num)
 {
   prefetch_offset = DEFAULT_OFFSET;
   rr_init();
@@ -415,7 +415,7 @@ void l2_prefetcher_initialize(int cpu_num)
 }
 
 
-void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned long long int ip, int cache_hit)
+void CACHE::l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned long long int ip, int cache_hit)
 {
   t_addr lineaddr = addr >> LOGLINE;
 
@@ -447,7 +447,7 @@ void l2_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned lo
 }
 
 
-void l2_cache_fill(int cpu_num, unsigned long long int addr, int set, int way, int prefetch, unsigned long long int evicted_addr)
+void CACHE::l2_cache_fill(int cpu_num, unsigned long long int addr, int set, int way, int prefetch, unsigned long long int evicted_addr)
 {
   // In this version of the DPC2 simulator, the "prefetch" boolean passed
   // as input here is not reset whenever a demand request hits in the L2
@@ -476,17 +476,17 @@ void l2_cache_fill(int cpu_num, unsigned long long int addr, int set, int way, i
 }
 
 
-void l2_prefetcher_heartbeat_stats(int cpu_num)
+void CACHE::l2_prefetcher_heartbeat_stats(int cpu_num)
 {
  
 }
 
-void l2_prefetcher_warmup_stats(int cpu_num)
+void CACHE::l2_prefetcher_warmup_stats(int cpu_num)
 {
   
 }
 
-void l2_prefetcher_final_stats(int cpu_num)
+void CACHE::l2_prefetcher_final_stats(int cpu_num)
 {
  
 }
