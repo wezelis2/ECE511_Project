@@ -46,7 +46,7 @@ int prefetch_offset;   // 7 bits (6-bit value + 1 sign bit)
 int recent_request[2][1<<RRINDEX]; // 2x64x12 = 1536 bits
 
 // 1 prefetch bit per L2 cache line : 256x8 = 2048 bits 
-int prefetch_bit[L2_SET_COUNT][L2_ASSOCIATIVITY]; 
+int prefetch_bit[L2C_SET][L2C_WAY]; 
 
 
 struct offsets_scores {
