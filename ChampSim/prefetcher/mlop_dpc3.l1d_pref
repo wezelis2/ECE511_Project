@@ -468,6 +468,7 @@ class MLOP {
         // assert(ORIGIN == MAX_OFFSET);
         // assert(NUM_OFFSETS == MAX_OFFSET * 2 + 1);
         // assert((int)offset_scores[0].size() == NUM_OFFSETS);
+         cout << "CREATED MLOP" << endl;
     }
 
     /**
@@ -602,6 +603,7 @@ class MLOP {
 
             /* stats */
             this->round_cnt += 1;
+            cout << "INCREMENTING ROUND COUNT" << endl;
 
             int cur_pf_degree = 0;
             for (const bool &x : pf_offset_map)
@@ -837,6 +839,8 @@ void CACHE::l1d_prefetcher_initialize() {
     const double L2C_THRESH = 0.30;
     const double LLC_THRESH = 2.00; /* off */
     /*======================*/
+
+    cout << "CALLED INIT FCN" << endl;
 
     /* construct prefetcher for all cores */
     L1D_PREF::prefetchers =
