@@ -468,7 +468,6 @@ class MLOP {
         // assert(ORIGIN == MAX_OFFSET);
         // assert(NUM_OFFSETS == MAX_OFFSET * 2 + 1);
         // assert((int)offset_scores[0].size() == NUM_OFFSETS);
-         cout << "CREATED MLOP" << endl;
     }
 
     /**
@@ -500,15 +499,12 @@ class MLOP {
                 this->zone_life.push_back(string(this->blocks_in_zone, state_char[State::INIT]));
             }
             /* ===== */
-            cout << "RETURNING IN UPDATE SCORES" << endl;
             return;
         }
         vector<State> access_map = entry->data.access_map;
         if (access_map[zone_offset] == State::ACCESS)
-        {
-            cout << "IGNORING REPEATED TRIGGER ACCESS" << endl;
             return; /* ignore repeated trigger access */
-        }
+
         this->update_cnt += 1;
         const deque<int> &queue = entry->data.hist_queue;
         for (int d = 0; d <= (int)queue.size(); d += 1) {
@@ -607,7 +603,6 @@ class MLOP {
 
             /* stats */
             this->round_cnt += 1;
-            cout << "INCREMENTING ROUND COUNT" << endl;
 
             int cur_pf_degree = 0;
             for (const bool &x : pf_offset_map)
@@ -844,8 +839,6 @@ void CACHE::l1d_prefetcher_initialize() {
     const double LLC_THRESH = 2.00; /* off */
     /*======================*/
 
-    cout << "CALLED INIT FCN" << endl;
-
     /* construct prefetcher for all cores */
     L1D_PREF::prefetchers =
         vector<L1D_PREF::MLOP>(NUM_CPUS, L1D_PREF::MLOP(BLOCKS_IN_ZONE, AMT_SIZE, PREFETCH_DEGREE, NUM_UPDATES,
@@ -870,10 +863,7 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     /* check trigger access */
     bool trigger_access = false;
     if (cache_hit == 0 || prefetch_hit)
-    {
         trigger_access = true;
-        cout << "SET TRIGGER ACCESS" << endl;
-    }
 
     if (trigger_access)
         /* update MLOP with most recent trigger access */
