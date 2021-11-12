@@ -476,15 +476,15 @@ void CACHE::l2_cache_fill(int cpu_num, unsigned long long int addr, int set, int
 }
 
 
-void CACHE::l2_prefetcher_heartbeat_stats(int cpu_num)
-{
+// void CACHE::l2_prefetcher_heartbeat_stats(int cpu_num)
+// {
  
-}
+// }
 
-void CACHE::l2_prefetcher_warmup_stats(int cpu_num)
-{
+// void CACHE::l2_prefetcher_warmup_stats(int cpu_num)
+// {
   
-}
+// }
 
 void CACHE::l2_prefetcher_final_stats(int cpu_num)
 {
