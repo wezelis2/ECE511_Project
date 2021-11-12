@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include "inc/prefetcher.h"
+#include "cache.h"
 
 // Submission ID: 3
 
