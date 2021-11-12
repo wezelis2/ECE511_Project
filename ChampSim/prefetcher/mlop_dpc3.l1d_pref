@@ -866,7 +866,10 @@ void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit
     /* check trigger access */
     bool trigger_access = false;
     if (cache_hit == 0 || prefetch_hit)
+    {
         trigger_access = true;
+        cout << "SET TRIGGER ACCESS" << endl;
+    }
 
     if (trigger_access)
         /* update MLOP with most recent trigger access */
