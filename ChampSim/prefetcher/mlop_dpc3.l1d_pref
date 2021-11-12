@@ -500,11 +500,15 @@ class MLOP {
                 this->zone_life.push_back(string(this->blocks_in_zone, state_char[State::INIT]));
             }
             /* ===== */
+            cout << "RETURNING IN UPDATE SCORES" << endl;
             return;
         }
         vector<State> access_map = entry->data.access_map;
         if (access_map[zone_offset] == State::ACCESS)
+        {
+            cout << "IGNORING REPEATED TRIGGER ACCESS" << endl;
             return; /* ignore repeated trigger access */
+        }
         this->update_cnt += 1;
         const deque<int> &queue = entry->data.hist_queue;
         for (int d = 0; d <= (int)queue.size(); d += 1) {
