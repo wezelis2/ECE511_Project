@@ -224,7 +224,7 @@ class CACHE : public MEMORY {
              lru_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type);
 
     //For best offset impl
-    uint64_t get_current_core_cycle(int core);
+    uint64_t get_current_core_cycle(uint32_t core);
 };
 
 #endif
