@@ -60,7 +60,7 @@ struct offsets_scores {
 
 struct delay_queue {
   int lineaddr[DELAYQSIZE]; // RRINDEX+RTAG = 18 bits
-  int cycle[DELAYQSIZE];    // TIME_BITS = 12 bits
+  int cycle[DELAYQSIZE];    // TIME_BITS = 12 bits --> THIS IS ONLY NEEDED FOR SOFTWARE IMPL
   int valid[DELAYQSIZE];    // 1 bit 
   int tail;                 // log2 DELAYQSIZE = 4 bits
   int head;                 // log2 DELAYQSIZE = 4 bits
@@ -117,13 +117,13 @@ int rr_tag(t_addr lineaddr)
 
 int rr_index_left(t_addr lineaddr)
 {
-  return TRUNCATE(lineaddr^(lineaddr>>RRINDEX),RRINDEX);
+  return TRUNCATE(lineaddr^(lineaddr>>RRINDEX),RRINDEX); //first arg is left "hashing algo"
 }
 
 
 int rr_index_right(t_addr lineaddr)
 {
-  return TRUNCATE(lineaddr^(lineaddr>>(2*RRINDEX)),RRINDEX);
+  return TRUNCATE(lineaddr^(lineaddr>>(2*RRINDEX)),RRINDEX); //first arg is right "hashing algo"
 }
 
 
@@ -164,6 +164,9 @@ int rr_hit(t_addr lineaddr)
 // prefetcher can act only at certain clock cycles. In a real processor, the delay queue
 // implementation can be simpler.
 
+// Abby's notes: basically this can't be written as a simple circular queue because this
+// software class doesn't get a steady "clock pulse" so instead they're tracking latencies,
+// i.e. "has enough time passed since the last check for me to insert the head into RR Table"
 
 void dq_init()
 {
@@ -188,9 +191,9 @@ void dq_push(t_addr lineaddr)
     INCREMENT(dq.head,DELAYQSIZE);
   }
   dq.lineaddr[dq.tail] = TRUNCATE(lineaddr,RRINDEX+RRTAG);
-  dq.cycle[dq.tail] = TRUNCATE(get_current_cycle(0),TIME_BITS);
+  dq.cycle[dq.tail] = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
   dq.valid[dq.tail] = 1;
-  INCREMENT(dq.tail,DELAYQSIZE);
+  INCREMENT(dq.tail,DELAYQSIZE); //this is just a circular ++ (wrap back around to zero after last entry)
 }
 
 
@@ -201,7 +204,7 @@ int dq_ready()
     // delay queue is empty
     return 0;
   }
-  int cycle = TRUNCATE(get_current_cycle(0),TIME_BITS);
+  int cycle = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
   int issuecycle = dq.cycle[dq.head];
   int readycycle = TRUNCATE(issuecycle+DELAY,TIME_BITS);
   if (readycycle >= issuecycle) {
@@ -277,7 +280,7 @@ void pt_update_mshr_threshold()
 void pt_llc_access()
 {
   // update the gauge
-  int cycle = TRUNCATE(get_current_cycle(0),TIME_BITS);
+  int cycle = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
   int dt = TRUNCATE(cycle - pt.last_cycle,TIME_BITS);
   pt.last_cycle = cycle;
   pt.llc_rate_gauge += dt - pt.llc_rate;

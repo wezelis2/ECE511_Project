@@ -1751,3 +1751,8 @@ void CACHE::increment_WQ_FULL(uint64_t address)
 {
     WQ.FULL++;
 }
+
+uint64_t CACHE::get_current_core_cycle(int core)
+{
+    return current_core_cycle[core];
+}
