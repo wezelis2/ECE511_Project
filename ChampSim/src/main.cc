@@ -341,7 +341,7 @@ uint64_t va_to_pa(uint32_t cpu, uint64_t instr_id, uint64_t va, uint64_t unique_
             // here, ChampSim randomly selects a page that is not recently used and we only track 32K recently accessed pages
             uint8_t  found_NRU = 0;
             uint64_t NRU_vpage = 0; // implement it
-            map <uint64_t, uint64_t>::iterator pr2 = recent_page.begin();
+            recent_page.begin();
             for (pr = page_table.begin(); pr != page_table.end(); pr++) {
 
                 NRU_vpage = pr->first;
