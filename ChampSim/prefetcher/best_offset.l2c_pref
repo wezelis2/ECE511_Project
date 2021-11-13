@@ -191,7 +191,7 @@ void dq_push(t_addr lineaddr)
     INCREMENT(dq.head,DELAYQSIZE);
   }
   dq.lineaddr[dq.tail] = TRUNCATE(lineaddr,RRINDEX+RRTAG);
-  dq.cycle[dq.tail] = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
+  dq.cycle[dq.tail] = TRUNCATE(current_core_cycle[0],TIME_BITS);
   dq.valid[dq.tail] = 1;
   INCREMENT(dq.tail,DELAYQSIZE); //this is just a circular ++ (wrap back around to zero after last entry)
 }
@@ -204,7 +204,7 @@ int dq_ready()
     // delay queue is empty
     return 0;
   }
-  int cycle = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
+  int cycle = TRUNCATE(current_core_cycle[0],TIME_BITS);
   int issuecycle = dq.cycle[dq.head];
   int readycycle = TRUNCATE(issuecycle+DELAY,TIME_BITS);
   if (readycycle >= issuecycle) {
@@ -280,7 +280,7 @@ void pt_update_mshr_threshold()
 void pt_llc_access()
 {
   // update the gauge
-  int cycle = TRUNCATE(get_current_core_cycle(0),TIME_BITS);
+  int cycle = TRUNCATE(current_core_cycle[0],TIME_BITS);
   int dt = TRUNCATE(cycle - pt.last_cycle,TIME_BITS);
   pt.last_cycle = cycle;
   pt.llc_rate_gauge += dt - pt.llc_rate;
