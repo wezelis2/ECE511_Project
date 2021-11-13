@@ -825,203 +825,203 @@ void CACHE::handle_prefetch()
       if (prefetch_cpu == NUM_CPUS)
         return;
 
-        // handle the oldest entry
-        if ((PQ.entry[PQ.head].event_cycle <= current_core_cycle[prefetch_cpu]) && (PQ.occupancy > 0)) {
-            int index = PQ.head;
+    // handle the oldest entry
+    if ((PQ.entry[PQ.head].event_cycle <= current_core_cycle[prefetch_cpu]) && (PQ.occupancy > 0)) {
+        int index = PQ.head;
 
-            // access cache
-            uint32_t set = get_set(PQ.entry[index].address);
-            int way = check_hit(&PQ.entry[index]);
+        // access cache
+        uint32_t set = get_set(PQ.entry[index].address);
+        int way = check_hit(&PQ.entry[index]);
+        
+        if (way >= 0) { // prefetch hit
+
+            // update replacement policy
+            if (cache_type == IS_LLC) {
+                llc_update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
+
+            }
+            else
+                update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
+
+            // COLLECT STATS
+            sim_hit[prefetch_cpu][PQ.entry[index].type]++;
+            sim_access[prefetch_cpu][PQ.entry[index].type]++;
+
+	// run prefetcher on prefetches from higher caches
+	if(PQ.entry[index].pf_origin_level < fill_level)
+	  {
+	    if (cache_type == IS_L1D)
+	      l1d_prefetcher_operate(PQ.entry[index].full_addr, PQ.entry[index].ip, 1, PREFETCH);
+                else if (cache_type == IS_L2C)
+                  PQ.entry[index].pf_metadata = l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 1, PREFETCH, PQ.entry[index].pf_metadata);
+                else if (cache_type == IS_LLC)
+	      {
+		cpu = prefetch_cpu;
+		PQ.entry[index].pf_metadata = llc_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 1, PREFETCH, PQ.entry[index].pf_metadata);
+		cpu = 0;
+	      }
+	  }
+
+            // check fill level
+            if (PQ.entry[index].fill_level < fill_level) {
+
+	  if(fill_level == FILL_L2)
+	    {
+	      if(PQ.entry[index].fill_l1i)
+		{
+		  upper_level_icache[prefetch_cpu]->return_data(&PQ.entry[index]);
+		}
+	      if(PQ.entry[index].fill_l1d)
+		{
+		  upper_level_dcache[prefetch_cpu]->return_data(&PQ.entry[index]);
+		}
+	    }
+	  else
+	    {
+	      if (PQ.entry[index].instruction)
+                    upper_level_icache[prefetch_cpu]->return_data(&PQ.entry[index]);
+	      if (PQ.entry[index].is_data)
+                    upper_level_dcache[prefetch_cpu]->return_data(&PQ.entry[index]);
+	    }
+            }
+
+            HIT[PQ.entry[index].type]++;
+            ACCESS[PQ.entry[index].type]++;
             
-            if (way >= 0) { // prefetch hit
+            // remove this entry from PQ
+            PQ.remove_queue(&PQ.entry[index]);
+	reads_available_this_cycle--;
+        }
+        else { // prefetch miss
 
-                // update replacement policy
-                if (cache_type == IS_LLC) {
-                    llc_update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
+            DP ( if (warmup_complete[prefetch_cpu]) {
+            cout << "[" << NAME << "] " << __func__ << " prefetch miss";
+            cout << " instr_id: " << PQ.entry[index].instr_id << " address: " << hex << PQ.entry[index].address;
+            cout << " full_addr: " << PQ.entry[index].full_addr << dec << " fill_level: " << PQ.entry[index].fill_level;
+            cout << " cycle: " << PQ.entry[index].event_cycle << endl; });
 
+            // check mshr
+            uint8_t miss_handled = 1;
+            int mshr_index = check_mshr(&PQ.entry[index]);
+
+	if(mshr_index == -2)
+	  {
+	    // this is a data/instruction collision in the MSHR, so we have to wait before we can allocate this miss
+	    miss_handled = 0;
+	  }
+            else if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a new miss
+
+                DP ( if (warmup_complete[PQ.entry[index].cpu]) {
+                cout << "[" << NAME << "_PQ] " <<  __func__ << " want to add instr_id: " << PQ.entry[index].instr_id << " address: " << hex << PQ.entry[index].address;
+                cout << " full_addr: " << PQ.entry[index].full_addr << dec;
+                cout << " occupancy: " << lower_level->get_occupancy(3, PQ.entry[index].address) << " SIZE: " << lower_level->get_size(3, PQ.entry[index].address) << endl; });
+
+                // first check if the lower level PQ is full or not
+                // this is possible since multiple prefetchers can exist at each level of caches
+                if (lower_level) {
+	      if (cache_type == IS_LLC) {
+		if (lower_level->get_occupancy(1, PQ.entry[index].address) == lower_level->get_size(1, PQ.entry[index].address))
+		  miss_handled = 0;
+		else {
+		  
+		  // run prefetcher on prefetches from higher caches
+		  if(PQ.entry[index].pf_origin_level < fill_level)
+		    {
+		      if (cache_type == IS_LLC)
+			{
+			  cpu = prefetch_cpu;
+			  PQ.entry[index].pf_metadata = llc_prefetcher_operate(PQ.entry[index].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 0, PREFETCH, PQ.entry[index].pf_metadata);
+			  cpu = 0;
+			}
+		    }
+		  
+		  // add it to MSHRs if this prefetch miss will be filled to this cache level
+		  if (PQ.entry[index].fill_level <= fill_level)
+		    add_mshr(&PQ.entry[index]);
+
+		  lower_level->add_rq(&PQ.entry[index]); // add it to the DRAM RQ
+		}
+	      }
+	      else {
+		if (lower_level->get_occupancy(3, PQ.entry[index].address) == lower_level->get_size(3, PQ.entry[index].address))
+		  miss_handled = 0;
+		else {
+
+		  // run prefetcher on prefetches from higher caches
+		  if(PQ.entry[index].pf_origin_level < fill_level)
+		    {
+		      if (cache_type == IS_L1D)
+			l1d_prefetcher_operate(PQ.entry[index].full_addr, PQ.entry[index].ip, 0, PREFETCH);
+		      if (cache_type == IS_L2C)
+			PQ.entry[index].pf_metadata = l2c_prefetcher_operate(PQ.entry[index].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 0, PREFETCH, PQ.entry[index].pf_metadata);
+		    }
+		  
+		  // add it to MSHRs if this prefetch miss will be filled to this cache level
+		  if (PQ.entry[index].fill_level <= fill_level)
+		    add_mshr(&PQ.entry[index]);
+
+		  lower_level->add_pq(&PQ.entry[index]); // add it to the DRAM RQ
+		}
+	      }
+	    }
+            }
+            else {
+                if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
+
+                    // TODO: should we allow prefetching with lower fill level at this case?
+                    
+                    // cannot handle miss request until one of MSHRs is available
+                    miss_handled = 0;
+                    STALL[PQ.entry[index].type]++;
                 }
-                else
-                    update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
+                else if (mshr_index != -1) { // already in-flight miss
 
-                // COLLECT STATS
-                sim_hit[prefetch_cpu][PQ.entry[index].type]++;
-                sim_access[prefetch_cpu][PQ.entry[index].type]++;
+                    // no need to update request except fill_level
+                    // update fill_level
+                    if (PQ.entry[index].fill_level < MSHR.entry[mshr_index].fill_level)
+                        MSHR.entry[mshr_index].fill_level = PQ.entry[index].fill_level;
 
-		// run prefetcher on prefetches from higher caches
-		if(PQ.entry[index].pf_origin_level < fill_level)
+		if((PQ.entry[index].fill_l1i) && (MSHR.entry[mshr_index].fill_l1i != 1))
 		  {
-		    if (cache_type == IS_L1D)
-		      l1d_prefetcher_operate(PQ.entry[index].full_addr, PQ.entry[index].ip, 1, PREFETCH);
-                    else if (cache_type == IS_L2C)
-                      PQ.entry[index].pf_metadata = l2c_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 1, PREFETCH, PQ.entry[index].pf_metadata);
-                    else if (cache_type == IS_LLC)
-		      {
-			cpu = prefetch_cpu;
-			PQ.entry[index].pf_metadata = llc_prefetcher_operate(block[set][way].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 1, PREFETCH, PQ.entry[index].pf_metadata);
-			cpu = 0;
-		      }
+		    MSHR.entry[mshr_index].fill_l1i = 1;
+		  }
+		if((PQ.entry[index].fill_l1d) && (MSHR.entry[mshr_index].fill_l1d != 1))
+		  {
+		    MSHR.entry[mshr_index].fill_l1d = 1;
 		  }
 
-                // check fill level
-                if (PQ.entry[index].fill_level < fill_level) {
+                    MSHR_MERGED[PQ.entry[index].type]++;
 
-		  if(fill_level == FILL_L2)
-		    {
-		      if(PQ.entry[index].fill_l1i)
-			{
-			  upper_level_icache[prefetch_cpu]->return_data(&PQ.entry[index]);
-			}
-		      if(PQ.entry[index].fill_l1d)
-			{
-			  upper_level_dcache[prefetch_cpu]->return_data(&PQ.entry[index]);
-			}
-		    }
-		  else
-		    {
-		      if (PQ.entry[index].instruction)
-                        upper_level_icache[prefetch_cpu]->return_data(&PQ.entry[index]);
-		      if (PQ.entry[index].is_data)
-                        upper_level_dcache[prefetch_cpu]->return_data(&PQ.entry[index]);
-		    }
+                    DP ( if (warmup_complete[prefetch_cpu]) {
+                    cout << "[" << NAME << "] " << __func__ << " mshr merged";
+                    cout << " instr_id: " << PQ.entry[index].instr_id << " prior_id: " << MSHR.entry[mshr_index].instr_id; 
+                    cout << " address: " << hex << PQ.entry[index].address;
+                    cout << " full_addr: " << PQ.entry[index].full_addr << dec << " fill_level: " << MSHR.entry[mshr_index].fill_level;
+                    cout << " cycle: " << MSHR.entry[mshr_index].event_cycle << endl; });
                 }
-
-                HIT[PQ.entry[index].type]++;
-                ACCESS[PQ.entry[index].type]++;
-                
-                // remove this entry from PQ
-                PQ.remove_queue(&PQ.entry[index]);
-		reads_available_this_cycle--;
+                else { // WE SHOULD NOT REACH HERE
+                    cerr << "[" << NAME << "] MSHR errors" << endl;
+                    assert(0);
+                }
             }
-            else { // prefetch miss
+
+            if (miss_handled) {
 
                 DP ( if (warmup_complete[prefetch_cpu]) {
-                cout << "[" << NAME << "] " << __func__ << " prefetch miss";
+                cout << "[" << NAME << "] " << __func__ << " prefetch miss handled";
                 cout << " instr_id: " << PQ.entry[index].instr_id << " address: " << hex << PQ.entry[index].address;
                 cout << " full_addr: " << PQ.entry[index].full_addr << dec << " fill_level: " << PQ.entry[index].fill_level;
                 cout << " cycle: " << PQ.entry[index].event_cycle << endl; });
 
-                // check mshr
-                uint8_t miss_handled = 1;
-                int mshr_index = check_mshr(&PQ.entry[index]);
+                MISS[PQ.entry[index].type]++;
+                ACCESS[PQ.entry[index].type]++;
 
-		if(mshr_index == -2)
-		  {
-		    // this is a data/instruction collision in the MSHR, so we have to wait before we can allocate this miss
-		    miss_handled = 0;
-		  }
-                else if ((mshr_index == -1) && (MSHR.occupancy < MSHR_SIZE)) { // this is a new miss
-
-                    DP ( if (warmup_complete[PQ.entry[index].cpu]) {
-                    cout << "[" << NAME << "_PQ] " <<  __func__ << " want to add instr_id: " << PQ.entry[index].instr_id << " address: " << hex << PQ.entry[index].address;
-                    cout << " full_addr: " << PQ.entry[index].full_addr << dec;
-                    cout << " occupancy: " << lower_level->get_occupancy(3, PQ.entry[index].address) << " SIZE: " << lower_level->get_size(3, PQ.entry[index].address) << endl; });
-
-                    // first check if the lower level PQ is full or not
-                    // this is possible since multiple prefetchers can exist at each level of caches
-                    if (lower_level) {
-		      if (cache_type == IS_LLC) {
-			if (lower_level->get_occupancy(1, PQ.entry[index].address) == lower_level->get_size(1, PQ.entry[index].address))
-			  miss_handled = 0;
-			else {
-			  
-			  // run prefetcher on prefetches from higher caches
-			  if(PQ.entry[index].pf_origin_level < fill_level)
-			    {
-			      if (cache_type == IS_LLC)
-				{
-				  cpu = prefetch_cpu;
-				  PQ.entry[index].pf_metadata = llc_prefetcher_operate(PQ.entry[index].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 0, PREFETCH, PQ.entry[index].pf_metadata);
-				  cpu = 0;
-				}
-			    }
-			  
-			  // add it to MSHRs if this prefetch miss will be filled to this cache level
-			  if (PQ.entry[index].fill_level <= fill_level)
-			    add_mshr(&PQ.entry[index]);
-
-			  lower_level->add_rq(&PQ.entry[index]); // add it to the DRAM RQ
-			}
-		      }
-		      else {
-			if (lower_level->get_occupancy(3, PQ.entry[index].address) == lower_level->get_size(3, PQ.entry[index].address))
-			  miss_handled = 0;
-			else {
-
-			  // run prefetcher on prefetches from higher caches
-			  if(PQ.entry[index].pf_origin_level < fill_level)
-			    {
-			      if (cache_type == IS_L1D)
-				l1d_prefetcher_operate(PQ.entry[index].full_addr, PQ.entry[index].ip, 0, PREFETCH);
-			      if (cache_type == IS_L2C)
-				PQ.entry[index].pf_metadata = l2c_prefetcher_operate(PQ.entry[index].address<<LOG2_BLOCK_SIZE, PQ.entry[index].ip, 0, PREFETCH, PQ.entry[index].pf_metadata);
-			    }
-			  
-			  // add it to MSHRs if this prefetch miss will be filled to this cache level
-			  if (PQ.entry[index].fill_level <= fill_level)
-			    add_mshr(&PQ.entry[index]);
-
-			  lower_level->add_pq(&PQ.entry[index]); // add it to the DRAM RQ
-			}
-		      }
-		    }
-                }
-                else {
-                    if ((mshr_index == -1) && (MSHR.occupancy == MSHR_SIZE)) { // not enough MSHR resource
-
-                        // TODO: should we allow prefetching with lower fill level at this case?
-                        
-                        // cannot handle miss request until one of MSHRs is available
-                        miss_handled = 0;
-                        STALL[PQ.entry[index].type]++;
-                    }
-                    else if (mshr_index != -1) { // already in-flight miss
-
-                        // no need to update request except fill_level
-                        // update fill_level
-                        if (PQ.entry[index].fill_level < MSHR.entry[mshr_index].fill_level)
-                            MSHR.entry[mshr_index].fill_level = PQ.entry[index].fill_level;
-
-			if((PQ.entry[index].fill_l1i) && (MSHR.entry[mshr_index].fill_l1i != 1))
-			  {
-			    MSHR.entry[mshr_index].fill_l1i = 1;
-			  }
-			if((PQ.entry[index].fill_l1d) && (MSHR.entry[mshr_index].fill_l1d != 1))
-			  {
-			    MSHR.entry[mshr_index].fill_l1d = 1;
-			  }
-
-                        MSHR_MERGED[PQ.entry[index].type]++;
-
-                        DP ( if (warmup_complete[prefetch_cpu]) {
-                        cout << "[" << NAME << "] " << __func__ << " mshr merged";
-                        cout << " instr_id: " << PQ.entry[index].instr_id << " prior_id: " << MSHR.entry[mshr_index].instr_id; 
-                        cout << " address: " << hex << PQ.entry[index].address;
-                        cout << " full_addr: " << PQ.entry[index].full_addr << dec << " fill_level: " << MSHR.entry[mshr_index].fill_level;
-                        cout << " cycle: " << MSHR.entry[mshr_index].event_cycle << endl; });
-                    }
-                    else { // WE SHOULD NOT REACH HERE
-                        cerr << "[" << NAME << "] MSHR errors" << endl;
-                        assert(0);
-                    }
-                }
-
-                if (miss_handled) {
-
-                    DP ( if (warmup_complete[prefetch_cpu]) {
-                    cout << "[" << NAME << "] " << __func__ << " prefetch miss handled";
-                    cout << " instr_id: " << PQ.entry[index].instr_id << " address: " << hex << PQ.entry[index].address;
-                    cout << " full_addr: " << PQ.entry[index].full_addr << dec << " fill_level: " << PQ.entry[index].fill_level;
-                    cout << " cycle: " << PQ.entry[index].event_cycle << endl; });
-
-                    MISS[PQ.entry[index].type]++;
-                    ACCESS[PQ.entry[index].type]++;
-
-                    // remove this entry from PQ
-                    PQ.remove_queue(&PQ.entry[index]);
-		    reads_available_this_cycle--;
-                }
+                // remove this entry from PQ
+                PQ.remove_queue(&PQ.entry[index]);
+	    reads_available_this_cycle--;
             }
         }
+    }
 	else
 	  {
 	    return;
