@@ -1060,6 +1060,11 @@ uint32_t CACHE::get_way(uint64_t address, uint32_t set)
     return NUM_WAY;
 }
 
+uint64_t CACHE::get_current_core_cycle(uint32_t core)
+{
+    return current_core_cycle[core];
+}
+
 void CACHE::fill_cache(uint32_t set, uint32_t way, PACKET *packet)
 {
 #ifdef SANITY_CHECK
@@ -1744,7 +1749,3 @@ void CACHE::increment_WQ_FULL(uint64_t address)
     WQ.FULL++;
 }
 
-uint64_t CACHE::get_current_core_cycle(uint32_t core)
-{
-    return current_core_cycle[core];
-}
