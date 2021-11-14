@@ -270,7 +270,7 @@ void print_deadlock(uint32_t i)
 void signal_handler(int signal) 
 {
 	cout << "Caught signal: " << signal << endl;
-	exit(1);
+	exit(signal);
 }
 
 // log base 2 function from efectiu
