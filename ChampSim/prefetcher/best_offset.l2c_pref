@@ -68,7 +68,7 @@ struct delay_queue {
 
 
 struct prefetch_throttle {
-  int mshr_threshold;     // log2 L2_MSHR_COUNT = 4 bits
+  uint32_t mshr_threshold;     // log2 L2_MSHR_COUNT = 4 bits
   int prefetch_score;     // log2 SCORE_MAX = 5 bits
   int llc_rate;           // log2 LLC_RATE_MAX = 8 bits
   int llc_rate_gauge;     // log2 GAUGE_MAX = 13 bits
@@ -440,7 +440,13 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
   if (! l2_hit || prefetched) {
     os_learn_best_offset(lineaddr);
-    prefetch_issued = issue_prefetch(this, lineaddr, prefetch_offset, ip); //Note from Abby: YO passing in "this" is not good and super hacky, but let's us avoid making this file object oriented, since we're only running with 1 CPU
+s
+    // Warning from Abby: YO passing in "this" is not good programming and super hacky, but it 
+    // lets us avoid making this whole file object oriented, since we're only running with 1 CPU
+    // This will break if we try to run with more than one core (In order to do that, we likely 
+    // would want to make "BestOffsetPrefetcher" class that extends CACHE class or something like that
+    prefetch_issued = issue_prefetch(this, lineaddr, prefetch_offset, ip);
+
     if (prefetch_issued) {
       // assume the prefetch request is a L2 miss (we don't know actually)
       pt_llc_access();
