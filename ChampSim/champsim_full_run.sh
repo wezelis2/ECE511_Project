@@ -252,7 +252,7 @@ done
 
 echo
 
-if [ "$the_world_is_flat" = true ] ; then
+if [ "$FILE_FOUND" = true ] ; then
     echo "${BOLD}Full Run Finished! Result files are located in ./results_${N_SIM}M"
 else
     echo "No files found in ./dpc3_traces"
