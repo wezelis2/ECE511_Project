@@ -30,7 +30,7 @@ WARMUP="1"
 SIM="10"
 
 TRACE=("403.gcc-16B.champsimtrace.xz" \
-        "649.fotonik3d_s-1B.champsimtrace.xz"
+        "649.fotonik3d_s-1B.champsimtrace.xz")
 
 for i in "${array[@]}"
 do
