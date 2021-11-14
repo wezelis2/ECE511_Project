@@ -402,7 +402,7 @@ int issue_prefetch(t_addr lineaddr, int offset)
 //######################################################################################
 
 
-void CACHE::l2c_prefetcher_initialize(int cpu_num)
+void CACHE::l2c_prefetcher_initialize()
 {
   prefetch_offset = DEFAULT_OFFSET;
   rr_init();
@@ -417,8 +417,7 @@ void CACHE::l2c_prefetcher_initialize(int cpu_num)
   }
 }
 
-
-void CACHE::l2c_prefetcher_operate(int cpu_num, unsigned long long int addr, unsigned long long int ip, int cache_hit)
+void CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
 {
   t_addr lineaddr = addr >> LOGLINE;
 
@@ -449,8 +448,7 @@ void CACHE::l2c_prefetcher_operate(int cpu_num, unsigned long long int addr, uns
   }
 }
 
-
-void CACHE::l2c_cache_fill(int cpu_num, unsigned long long int addr, int set, int way, int prefetch, unsigned long long int evicted_addr)
+void CACHE::l2c_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint32_t metadata_in)
 {
   // In this version of the DPC2 simulator, the "prefetch" boolean passed
   // as input here is not reset whenever a demand request hits in the L2
@@ -478,18 +476,7 @@ void CACHE::l2c_cache_fill(int cpu_num, unsigned long long int addr, int set, in
   }
 }
 
-
-// void CACHE::l2_prefetcher_heartbeat_stats(int cpu_num)
-// {
- 
-// }
-
-// void CACHE::l2_prefetcher_warmup_stats(int cpu_num)
-// {
-  
-// }
-
-void CACHE::l2c_prefetcher_final_stats(int cpu_num)
+void CACHE::l2c_prefetcher_final_stats()
 {
- 
+  cout << "CPU " << cpu << " L2C best offset prefetcher final stats" << endl;
 }
