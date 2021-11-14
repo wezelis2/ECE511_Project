@@ -231,7 +231,6 @@ do
         retVal=$?
         if [ $retVal -ne 0 ]; then
             if [ $retVal -ne 130 ]; then
-                echo $retVal
                 echo "Failed"
             else
                 echo "Terminated"

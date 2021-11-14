@@ -46,5 +46,4 @@ mkdir -p results_${N_SIM}M
 
 let retVal=$?
 let retCode=retVal+128
-echo "Returning $retCode"
 exit $retCode
