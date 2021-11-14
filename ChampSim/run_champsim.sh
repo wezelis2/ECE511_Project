@@ -46,4 +46,5 @@ mkdir -p results_${N_SIM}M
 
 retVal=$?
 echo "Returning $retVal"
+kill -l "$?"
 exit $retVal
