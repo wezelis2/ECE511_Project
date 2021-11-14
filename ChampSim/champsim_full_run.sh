@@ -221,7 +221,7 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
 
 for i in "${TRACE[@]}"
 do
-    FILENAME=$i | xargs
+    FILENAME="$(echo -e "${i}" | tr -d '[:space:]')"
     FILE=./dpc3_traces/$FILENAME
     if test -f "$FILE"; then
        
