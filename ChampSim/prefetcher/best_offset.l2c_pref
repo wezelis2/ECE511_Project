@@ -440,7 +440,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
   if (! l2_hit || prefetched) {
     os_learn_best_offset(lineaddr);
-s
+    
     // Warning from Abby: YO passing in "this" is not good programming and super hacky, but it 
     // lets us avoid making this whole file object oriented, since we're only running with 1 CPU
     // This will break if we try to run with more than one core (In order to do that, we likely 
