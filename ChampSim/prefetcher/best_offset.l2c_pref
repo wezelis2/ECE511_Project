@@ -95,6 +95,8 @@ struct prefetch_throttle {
 
 #define DEBUG_OUT(str) {if (VERBOSE) printf(str);}
 
+typedef long long t_addr;
+
 //######################################################################################
 //                            RECENT REQUESTS TABLE (RR)
 //######################################################################################
