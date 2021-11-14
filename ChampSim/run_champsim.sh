@@ -45,5 +45,7 @@ mkdir -p results_${N_SIM}M
 (./bin/${BINARY} -warmup_instructions ${N_WARM}000000 -simulation_instructions ${N_SIM}000000 ${OPTION} -traces ${TRACE_DIR}/${TRACE}) &> results_${N_SIM}M/${TRACE}-${BINARY}${OPTION}.txt
 
 let retVal=$?
-let retCode=retVal+128
+if [ $retVal -ne 0 ]; then
+    let retCode=retVal+128
+fi
 exit $retCode
