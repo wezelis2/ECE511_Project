@@ -29,13 +29,13 @@ BINARY_NAME="bimodal-next_line-${L1D_PREFETCHER}-${L2C_PREFETCHER}-${LLC_PREFETC
 WARMUP="1"
 SIM="10"
 
-TRACE[0] = "403.gcc-16B.champsimtrace.xz"
-TRACE[1] = "649.fotonik3d_s-1B.champsimtrace.xz"
+TRACE = ("403.gcc-16B.champsimtrace.xz" \
+        "649.fotonik3d_s-1B.champsimtrace.xz"
 
 for i in "${array[@]}"
 do
     echo "Running trace $i ..."
-    
+
     ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} ${TRACE[0]}
     echo "Done "
 done
