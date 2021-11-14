@@ -32,6 +32,7 @@ module best_offset_prefetcher #(
 	localparam 	int 	BANDWIDTH 			=  	(knob_low_bandwidth)? 64 : 16;
 	localparam 	int 	OFFSET_MAX 			= 	40;
 	localparam 	int 	LINE_SIZE 			= 	256;
+	localparam 	int 	LOGLINE				= 	6;
 
 	localparam 	int 	OFFSET[NOFFSETS-1:0]= 	{	1,		-1,		2,		-2,		
 													3,		-3,		4,		-4,		
@@ -45,6 +46,12 @@ module best_offset_prefetcher #(
 													24,		-24,	30,		-30,	
 													32,		-32,	36,		-36,	
 													OFFSET_MAX,		-OFFSET_MAX};
+
+	//######################################################################################
+	//										ENUMS AND STRUCTS
+	//######################################################################################
+	typedef enum 	logic	{LEFT, RIGHT} 			rr_side;
+
 
 	//######################################################################################
 	//										LOGIC DECLARATION
@@ -69,6 +76,14 @@ module best_offset_prefetcher #(
 	logic 											data_left, 	data_right;
 	logic 											valid_left, valid_right;
 
+	// delay queue signals
+	logic 											delay_queue_enq;
+	logic 			[WIDTH - 1:0]					delay_queue_in;
+	logic 											delay_queue_empty;
+	logic 											delay_queue_full;
+	logic 											delay_queue_ready;
+	logic 			[WIDTH - 1:0]					delay_queue_out;
+
 	//######################################################################################
 	//										LOGIC ASSIGNMENTS
 	//######################################################################################
@@ -78,7 +93,7 @@ module best_offset_prefetcher #(
 	//######################################################################################
 	//										MODULE DECLARATION
 	//######################################################################################
-	bank rr_table_left #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, 0) (
+	bank rr_table_left #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, LEFT) (
 		.read_i(read_left),
 		.write_i(write_left),
 		.data_i(data_left),
@@ -88,13 +103,24 @@ module best_offset_prefetcher #(
 		.*
 	);
 
-	bank rr_table_right #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, 1) (
+	bank rr_table_right #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, RIGHT) (
 		.read_i(read_right),
 		.write_i(write_right),
 		.data_i(data_right),
 		.hit_o(hit_right),
 		.data_o(data_right),
 		.valid_o(valid_right),
+		.*
+	);
+
+	circular_queue delay_queue #(WIDTH, DELAY) (
+		.enq(delay_queue_enq),
+		.deq(1'b1),
+		.in(delay_queue_in),
+		.empty(delay_queue_empty),
+		.full(delay_queue_full),
+		.ready(delay_queue_ready),
+		.out(delay_queue_out),
 		.*
 	);
 
@@ -130,16 +156,49 @@ module best_offset_prefetcher #(
 	endtask
 
 	function void set_defaults();
-		read_left	= '0;
-		read_right	= '0;
-		write_left	= '0;
-		write_right	= '0;
-		data_left	= '0;
-		data_right	= '0;
+		read_left			= '0;
+		read_right			= '0;
+		write_left			= '0;
+		write_right			= '0;
+		data_left			= '0;
+		data_right			= '0;
+		delay_queue_enq		= '0;
+		delay_queue_in		= '0;
 	endfunction
 
 	//######################################################################################
-	//									LEARNING TASKS
+	//									RR AND DQ TASKS
+	//######################################################################################
+
+	task rr_table_insert(logic [WIDTH - 1:0] data, rr_side side);
+		unique case(side)
+			LEFT: 	begin 
+				write_left	<= 1'b1;
+				data_left	<= data;
+			end 
+
+			RIGHT:	begin 
+				write_right	<= 1'b1;
+				data_right	<= data;
+			end 
+
+			default:;
+		endcase
+	endtask
+
+	task delay_queue_push(logic [WIDTH - 1:0] data);
+		delay_queue_enq 	<= 1'b1;
+		delay_queue_in 		<= data;
+	endtask
+
+	task dq_pop_rr_left_insert();
+		if(delay_queue_ready) begin 
+			rr_table_insert(delay_queue_out, LEFT)
+		end
+	endtask
+
+	//######################################################################################
+	//									MISC TASKS
 	//######################################################################################
 
 	task learn_best_offset(logic [WIDTH - 1:0] address);
@@ -169,21 +228,46 @@ module best_offset_prefetcher #(
 		curr_offset_idx 			<= curr_offset_idx == NOFFSETS - 1 ? 0 : curr_offset_idx + 1;
 	endtask
 
-	task up_fill_cache(logic [WIDTH - 1:0] address, logic hit);	// not done implementing
-		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 		= get_up_set(address);
-		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 		= get_up_way(address);
-		logic 								prefetched 	= 0;
-
-		if (hit) begin 
-			prefetched 									= prefetched_table[set][way];
-			prefetched_table[set][way] 					= 0;
-		end
-
-		if (~hit | prefetched) begin 
-			learn_best_offset(address);
+	task issue_prefetch(logic [WIDTH - 1:0] address, logic [$clog2(OFFSET_MAX) - 1:0] offset);
+		delay_queue_push(address);
+		if(offset != 0 && lo_ready_i) begin 
+			lo_prefetch_address_o	<= address + offset;
+			lo_prefetch_valid_o		<= 1;
 		end 
 	endtask
 
+	task prefetcher_operate(logic [WIDTH - 1:0] address, logic hit);	// not done implementing
+		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
+		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
+		logic 								prefetched 		= 0;
+		logic 								prefetch_issued	= offset != 0 && lo_ready_i;
+
+		if (hit) begin 
+			prefetched 										<= prefetched_table[set][way];
+			prefetched_table[set][way] 						<= 0;
+		end
+
+		dq_pop_rr_left_insert();
+
+		if (~hit | prefetched) begin 
+			learn_best_offset(address);
+			issue_prefetch(address, prefetch_offset);
+			// if (prefetch_issued)
+				// something goes here?
+		end 
+	endtask
+
+	task fill_cache(logic [WIDTH - 1:0] address, logic prefetch_bit);
+		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
+		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
+
+		prefetched_table[set][way] 							<= prefetch_bit;
+
+		if (prefetch_bit || prefetch_offset == 0) begin 
+			rr_table_insert((address >> LOGLINE) - prefetch_offset, RIGHT);
+		end 
+
+	endtask
 
 	//######################################################################################
 	//									FUNCTIONS
@@ -205,6 +289,8 @@ module best_offset_prefetcher #(
 
 		return hit_left | hit_right;
 	endfunction
+
+	
 
 endmodule
 
