@@ -29,7 +29,7 @@ BINARY_NAME="bimodal-next_line-${L1D_PREFETCHER}-${L2C_PREFETCHER}-${LLC_PREFETC
 WARMUP="1"
 SIM="10"
 
-TRACE=("400.perlbench-41B.champsimtrace.xz      " \
+TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "400.perlbench-50B.champsimtrace.xz     " \
         "401.bzip2-226B.champsimtrace.xz        " \
         "401.bzip2-277B.champsimtrace.xz        " \
