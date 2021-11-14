@@ -34,7 +34,8 @@ TRACE=("403.gcc-16B.champsimtrace.xz" \
 
 for i in "${TRACE[@]}"
 do
-    echo "Running trace $i ..."
+    echo -n "Running trace $i ... "
+
     ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} $i
 
     retVal=$?
