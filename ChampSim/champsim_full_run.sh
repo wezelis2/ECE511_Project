@@ -224,7 +224,7 @@ do
     FILE=./dpc3_traces/$i
     if test -f "$FILE"; then
        
-       echo -n "Running trace $i ... \t\t\t"
+       echo -n "Running trace $i ... \t \t \t"
 
         ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} $i
 
