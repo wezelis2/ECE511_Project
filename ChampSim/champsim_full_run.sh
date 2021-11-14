@@ -221,12 +221,13 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
 
 for i in "${TRACE[@]}"
 do
-    FILE=./dpc3_traces/$i
+    FILENAME=$i | xargs
+    FILE=./dpc3_traces/$FILENAME
     if test -f "$FILE"; then
        
        echo -n -e "Running trace $i ... \t"
 
-        ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} $i
+        ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} ${FILENAME}
 
         retVal=$?
         if [ $retVal -ne 0 ]; then
