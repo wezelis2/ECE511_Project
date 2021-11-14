@@ -371,7 +371,7 @@ void os_learn_best_offset(t_addr lineaddr)
 // Issue at most one prefetch request. The prefetch line address is obtained by adding
 // the prefetch offset to the current line address
 
-int issue_prefetch(t_addr lineaddr, int offset, uint64_t ip)
+int issue_prefetch(CACHE my_cache, t_addr lineaddr, int offset, uint64_t ip)
 {
   if (offset == 0) {
     // The prefetcher is currently turned off.
@@ -383,15 +383,15 @@ int issue_prefetch(t_addr lineaddr, int offset, uint64_t ip)
     // crossing the page boundary, no prefetch request issued
     return 0;
   }
-  if (CACHE::get_occupancy(0, 0) /*MSHR occupancy*/ < pt.mshr_threshold) {
+  if (my_cache.get_occupancy(0, 0) /*MSHR occupancy*/ < pt.mshr_threshold) {
     // prefetch into L2
     dq_push(lineaddr);
-    return CACHE::prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_L2, 0);
+    return my_cache.prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_L2, 0);
   }
   // could not prefetch into L2
   // try to prefetch into LLC if prefetch accuracy not too bad
   if (pt.prefetch_score > LOW_SCORE) {
-    return CACHE::prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_LLC, 0);
+    return my_cache.prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_LLC, 0);
   }
   return 0;
 }
@@ -440,7 +440,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
   if (! l2_hit || prefetched) {
     os_learn_best_offset(lineaddr);
-    prefetch_issued = issue_prefetch(lineaddr, prefetch_offset, ip);
+    prefetch_issued = issue_prefetch(this, lineaddr, prefetch_offset, ip);
     if (prefetch_issued) {
       // assume the prefetch request is a L2 miss (we don't know actually)
       pt_llc_access();
