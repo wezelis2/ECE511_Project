@@ -32,7 +32,7 @@ int OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-
 #define MSHR_THRESHOLD_MAX (L2C_MSHR_SIZE-4)
 #define MSHR_THRESHOLD_MIN 2
 #define LOW_SCORE 20
-#define BAD_SCORE ((knob_small_llc)? 10 : 1)
+#define BAD_SCORE 1 //Assume "knob_small_llc" from DPC2 is not set here (if set BAD_SCORE would be 10)
 #define BANDWIDTH ((knob_low_bandwidth)? 64 : 16)
 
 
@@ -440,7 +440,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
   if (! l2_hit || prefetched) {
     os_learn_best_offset(lineaddr);
-    
+
     // Warning from Abby: YO passing in "this" is not good programming and super hacky, but it 
     // lets us avoid making this whole file object oriented, since we're only running with 1 CPU
     // This will break if we try to run with more than one core (In order to do that, we likely 
