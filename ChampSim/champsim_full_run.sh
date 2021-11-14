@@ -219,7 +219,9 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "657.xz_s-4994B.champsimtrace.xz        " \
         "657.xz_s-56B.champsimtrace.xz          ")
 
-echo "${BOLD}Running All Traces in dpc3_traces folder (filenames must not be changed from https://hpca23.cse.tamu.edu/champsim-traces/speccpu/index.html)"
+echo "${BOLD}Running All Traces in dpc3_traces folder with ${N_WARMUP}M warmup instr and ${N_SIM}M sim instr"
+echo "(filenames must not be changed from https://hpca23.cse.tamu.edu/champsim-traces/speccpu/index.html)"
+
 echo
 
 FILE_FOUND=false
