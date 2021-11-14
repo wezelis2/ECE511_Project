@@ -225,7 +225,7 @@ do
     FILE=./dpc3_traces/$FILENAME
     if test -f "$FILE"; then
        
-       echo -n -e "[0mRunning trace $i ... \t"
+       echo -n -e "\033[0mRunning trace $i ... \t"
 
         ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} ${FILENAME}
 
