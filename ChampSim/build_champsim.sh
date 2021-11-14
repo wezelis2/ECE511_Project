@@ -109,7 +109,7 @@ if [ ! -f bin/champsim ]; then
 fi
 
 echo "${BOLD}ChampSim is successfully built"
-echo "Branch Predictor: ${BRANCH}"
+echo "${NORMAL}Branch Predictor: ${BRANCH}"
 echo "L1I Prefetcher: ${L1I_PREFETCHER}"
 echo "L1D Prefetcher: ${L1D_PREFETCHER}"
 echo "L2C Prefetcher: ${L2C_PREFETCHER}"

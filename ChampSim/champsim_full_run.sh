@@ -220,6 +220,7 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "657.xz_s-56B.champsimtrace.xz          ")
 
 echo "${BOLD}Running All Traces in dpc_traces folder (filenames must not be changed)"
+echo
 
 for i in "${TRACE[@]}"
 do
@@ -246,5 +247,6 @@ do
     fi
 done
 
+echo
 echo "${BOLD}Full Run Finished!"
 
