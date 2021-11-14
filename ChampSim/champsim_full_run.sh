@@ -241,6 +241,7 @@ do
             fi
         else
             echo "Done"
+            break
         fi
     fi
 done
