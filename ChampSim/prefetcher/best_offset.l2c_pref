@@ -383,7 +383,7 @@ int issue_prefetch(t_addr lineaddr, int offset, uint64_t ip)
     // crossing the page boundary, no prefetch request issued
     return 0;
   }
-  if (get_l2_mshr_occupancy(0) < pt.mshr_threshold) {
+  if (get_occupancy(0, 0) /*MSHR occupancy*/ < pt.mshr_threshold) {
     // prefetch into L2
     dq_push(lineaddr);
     return prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE,FILL_L2, FILL_L2, 0);
