@@ -26,8 +26,8 @@ fi
 
 BINARY_NAME="bimodal-next_line-${L1D_PREFETCHER}-${L2C_PREFETCHER}-${LLC_PREFETCHER}-lru-1core"
 
-WARMUP="1"
-SIM="10"
+N_WARMUP="1"
+N_SIM="10"
 
 TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "400.perlbench-50B.champsimtrace.xz     " \
@@ -219,7 +219,7 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "657.xz_s-4994B.champsimtrace.xz        " \
         "657.xz_s-56B.champsimtrace.xz          ")
 
-echo "${BOLD}Running All Traces in dpc_traces folder (filenames must not be changed)"
+echo "${BOLD}Running All Traces in dpc_traces folder (filenames must not be changed from https://hpca23.cse.tamu.edu/champsim-traces/speccpu/index.html)"
 echo
 
 for i in "${TRACE[@]}"
@@ -230,7 +230,7 @@ do
        
        echo -n -e "\033[0mRunning trace $i ... \t"
 
-        ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} ${FILENAME}
+        ./run_champsim.sh ${BINARY_NAME} ${N_WARMUP} ${N_SIM} ${FILENAME}
 
         retVal=$?
         if [ $retVal -ne 0 ]; then
@@ -248,5 +248,5 @@ do
 done
 
 echo
-echo "${BOLD}Full Run Finished!"
+echo "${BOLD}Full Run Finished! Result files will be found in the results_${N_SIM}M folder"
 
