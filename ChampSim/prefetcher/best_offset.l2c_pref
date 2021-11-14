@@ -35,6 +35,8 @@ int OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-
 #define BAD_SCORE 1 //Assume "knob_small_llc" from DPC2 is not set here (if set BAD_SCORE would be 10)
 #define BANDWIDTH ((knob_low_bandwidth)? 64 : 16)
 
+#define VERBOSE 1
+
 
 //######################################################################################
 //                               PREFETCHER STATE
@@ -91,9 +93,7 @@ struct prefetch_throttle {
 
 #define TRUNCATE(x,nbits) (((x) & ((1<<(nbits))-1)))
 
-typedef long long t_addr;
-
-
+#define DEBUG_OUT(str) if (VERBOSE) printf(str);
 
 //######################################################################################
 //                            RECENT REQUESTS TABLE (RR)
@@ -165,7 +165,7 @@ int rr_hit(t_addr lineaddr)
 // implementation can be simpler.
 
 // Abby's notes: basically this can't be written as a simple circular queue because this
-// software class doesn't get a steady "clock pulse" so instead they're tracking latencies,
+// software impl doesn't get a steady "clock pulse" so instead they're tracking latencies,
 // i.e. "has enough time passed since the last check for me to insert the head into RR Table"
 
 void dq_init()
@@ -178,6 +178,7 @@ void dq_init()
   }
   dq.tail = 0;
   dq.head = 0;
+  DEBUG_OUT("DQ_INIT");
 }
 
 
@@ -227,6 +228,7 @@ void dq_pop()
     rr_insert_left(dq.lineaddr[dq.head]);
     dq.valid[dq.head] = 0;
     INCREMENT(dq.head,DELAYQSIZE);
+    DEBUG_OUT("SUCCESSFUL TRANSFER FROM DQ TO RR");
   }
 }
 
@@ -249,6 +251,7 @@ void pt_init()
   pt.llc_rate = 0;
   pt.llc_rate_gauge = GAUGE_MAX/2;
   pt.last_cycle = 0;
+  DEBUG_OUT("PT INIT");
 }
 
 
@@ -338,6 +341,7 @@ void os_learn_best_offset(t_addr lineaddr)
     if (os.score[os.p] >= os.max_score) {
       os.max_score = os.score[os.p];
       os.best_offset = testoffset;
+      DEBUG_OUT("BEST OFFSET UPDATED");
     }
   }
 
@@ -387,11 +391,13 @@ int issue_prefetch(CACHE *my_cache, t_addr lineaddr, int offset, uint64_t ip)
     // prefetch into L2
     dq_push(lineaddr);
     return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_L2, 0);
+    DEBUG_OUT("REQUEST L2 PREFETCH");
   }
   // could not prefetch into L2
   // try to prefetch into LLC if prefetch accuracy not too bad
   if (pt.prefetch_score > LOW_SCORE) {
     return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_LLC, 0);
+    DEBUG_OUT("REQUEST LLC PREFETCH");
   }
   return 0;
 }
@@ -415,6 +421,7 @@ void CACHE::l2c_prefetcher_initialize()
       prefetch_bit[i][j] = 0;
     }
   }
+  DEBUG_OUT("PREFETCHER INIT");
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
@@ -441,10 +448,13 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
   if (! l2_hit || prefetched) {
     os_learn_best_offset(lineaddr);
 
-    // Warning from Abby: YO passing in "this" is not good programming and super hacky, but it 
-    // lets us avoid making this whole file object oriented, since we're only running with 1 CPU
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // Warning from Abby: yo passing in "this" is not good programming and super hacky, but it 
+    // lets us avoid making this whole file object-oriented, since we're only running with 1 CPU
     // This will break if we try to run with more than one core (In order to do that, we likely 
-    // would want to make "BestOffsetPrefetcher" class that extends CACHE class or something like that
+    // would want to make "BestOffsetPrefetcher" class that extends CACHE class or something like 
+    // that so we could add our extra state and functions specific to Best Offset prefetcher
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     prefetch_issued = issue_prefetch(this, lineaddr, prefetch_offset, ip);
 
     if (prefetch_issued) {
