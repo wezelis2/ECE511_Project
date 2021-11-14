@@ -179,7 +179,7 @@ void dq_init()
   }
   dq.tail = 0;
   dq.head = 0;
-  DEBUG_OUT("DQ_INIT");
+  DEBUG_OUT("DQ_INIT\n");
 }
 
 
@@ -229,7 +229,7 @@ void dq_pop()
     rr_insert_left(dq.lineaddr[dq.head]);
     dq.valid[dq.head] = 0;
     INCREMENT(dq.head,DELAYQSIZE);
-    DEBUG_OUT("SUCCESSFUL TRANSFER FROM DQ TO RR");
+    DEBUG_OUT("SUCCESSFUL TRANSFER FROM DQ TO RR\n");
   }
 }
 
@@ -252,7 +252,7 @@ void pt_init()
   pt.llc_rate = 0;
   pt.llc_rate_gauge = GAUGE_MAX/2;
   pt.last_cycle = 0;
-  DEBUG_OUT("PT INIT");
+  DEBUG_OUT("PT INIT\n");
 }
 
 
@@ -342,7 +342,7 @@ void os_learn_best_offset(t_addr lineaddr)
     if (os.score[os.p] >= os.max_score) {
       os.max_score = os.score[os.p];
       os.best_offset = testoffset;
-      DEBUG_OUT("BEST OFFSET UPDATED");
+      DEBUG_OUT("BEST OFFSET UPDATED\n");
     }
   }
 
@@ -392,13 +392,13 @@ int issue_prefetch(CACHE *my_cache, t_addr lineaddr, int offset, uint64_t ip)
     // prefetch into L2
     dq_push(lineaddr);
     return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_L2, 0);
-    DEBUG_OUT("REQUEST L2 PREFETCH");
+    DEBUG_OUT("REQUEST L2 PREFETCH\n");
   }
   // could not prefetch into L2
   // try to prefetch into LLC if prefetch accuracy not too bad
   if (pt.prefetch_score > LOW_SCORE) {
     return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_LLC, 0);
-    DEBUG_OUT("REQUEST LLC PREFETCH");
+    DEBUG_OUT("REQUEST LLC PREFETCH\n");
   }
   return 0;
 }
@@ -422,7 +422,7 @@ void CACHE::l2c_prefetcher_initialize()
       prefetch_bit[i][j] = 0;
     }
   }
-  DEBUG_OUT("PREFETCHER INIT");
+  DEBUG_OUT("PREFETCHER INIT\n");
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
