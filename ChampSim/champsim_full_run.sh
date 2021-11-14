@@ -26,8 +26,8 @@ fi
 
 BINARY_NAME="bimodal-next_line-${L1D_PREFETCHER}-${L2C_PREFETCHER}-${LLC_PREFETCHER}-lru-1core"
 
-N_WARMUP="1"
-N_SIM="10"
+N_WARMUP="50"
+N_SIM="250"
 
 TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "400.perlbench-50B.champsimtrace.xz     " \
