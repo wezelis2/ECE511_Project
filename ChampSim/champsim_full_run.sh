@@ -224,13 +224,18 @@ do
     FILE=./dpc3_traces/$i
     if test -f "$FILE"; then
        
-       echo -n "Running trace $i ... \t \t \t"
+       echo -n -e "Running trace $i ... \t\t\t"
 
         ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} $i
 
         retVal=$?
         if [ $retVal -ne 0 ]; then
-            echo "Failed"
+            if [ $retVal -ne 130 ]; then
+                echo "Failed"
+            else
+                echo "Terminated"
+                exit 1
+            fi
         else
             echo "Done"
         fi
