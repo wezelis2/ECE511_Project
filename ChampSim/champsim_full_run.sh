@@ -20,7 +20,7 @@ NORMAL=$(tput sgr0)
 
 retVal=$?
 if [ $retVal -ne 0 ]; then
-    echo "Exiting due to build error"
+    echo "[ERROR] encountered error while running build"
     exit 1
 fi
 
@@ -32,11 +32,17 @@ SIM="10"
 TRACE=("403.gcc-16B.champsimtrace.xz" \
         "649.fotonik3d_s-1B.champsimtrace.xz")
 
-for i in "${array[@]}"
+for i in "${TRACE[@]}"
 do
     echo "Running trace $i ..."
+    ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} $i
 
-    ./run_champsim.sh ${BINARY_NAME} ${WARMUP} ${SIM} ${TRACE[0]}
+    retVal=$?
+    if [ $retVal -ne 0 ]; then
+        echo "[ERROR] encountered error while running trace $i"
+        exit 1
+    fi
+
     echo "Done "
 done
 
