@@ -93,7 +93,7 @@ struct prefetch_throttle {
 
 #define TRUNCATE(x,nbits) (((x) & ((1<<(nbits))-1)))
 
-#define DEBUG_OUT(str) if (VERBOSE) printf(str);
+#define DEBUG_OUT(str) {if (VERBOSE) printf(str);}
 
 //######################################################################################
 //                            RECENT REQUESTS TABLE (RR)
@@ -107,7 +107,6 @@ void rr_init()
     recent_request[1][i] = 0;
   }
 }
-
 
 int rr_tag(t_addr lineaddr)
 {
