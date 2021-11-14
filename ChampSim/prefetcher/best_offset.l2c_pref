@@ -387,9 +387,6 @@ int issue_prefetch(t_addr lineaddr, int offset, uint64_t ip)
     // prefetch into L2
     dq_push(lineaddr);
     return prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE,FILL_L2, FILL_L2, 0);
-
-
-    uint64_t ip, uint64_t base_addr, uint64_t pf_addr, int prefetch_fill_level, uint32_t prefetch_metadata)
   }
   // could not prefetch into L2
   // try to prefetch into LLC if prefetch accuracy not too bad
