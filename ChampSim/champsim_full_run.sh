@@ -19,7 +19,7 @@ NORMAL=$(tput sgr0)
 ./build_champsim.sh bimodal next_line ${L1D_PREFETCHER} ${L2C_PREFETCHER} ${LLC_PREFETCHER} lru 1
 
 retVal=$?
-if [ "$?" -ne "0" ]; then
+if [ $retVal -ne 0 ]; then
     echo "Exiting due to build error"
     exit 1
 fi
