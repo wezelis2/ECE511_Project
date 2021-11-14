@@ -45,5 +45,6 @@ mkdir -p results_${N_SIM}M
 (./bin/${BINARY} -warmup_instructions ${N_WARM}000000 -simulation_instructions ${N_SIM}000000 ${OPTION} -traces ${TRACE_DIR}/${TRACE}) &> results_${N_SIM}M/${TRACE}-${BINARY}${OPTION}.txt
 
 let retVal=$?
-echo "Returning $retVal"
-exit expr 128 + $retVal
+let retCode=retVal+128
+echo "Returning $retCode"
+exit $retCode
