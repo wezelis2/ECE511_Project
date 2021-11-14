@@ -219,15 +219,18 @@ TRACE=("400.perlbench-41B.champsimtrace.xz     " \
         "657.xz_s-4994B.champsimtrace.xz        " \
         "657.xz_s-56B.champsimtrace.xz          ")
 
-echo "${BOLD}Running All Traces in dpc_traces folder (filenames must not be changed from https://hpca23.cse.tamu.edu/champsim-traces/speccpu/index.html)"
+echo "${BOLD}Running All Traces in dpc3_traces folder (filenames must not be changed from https://hpca23.cse.tamu.edu/champsim-traces/speccpu/index.html)"
 echo
+
+FILE_FOUND=false
 
 for i in "${TRACE[@]}"
 do
     FILENAME="$(echo -e "${i}" | tr -d '[:space:]')"
     FILE=./dpc3_traces/$FILENAME
     if test -f "$FILE"; then
-       
+       FILE_FOUND=true
+
        echo -n -e "\033[0mRunning trace $i ... \t"
 
         ./run_champsim.sh ${BINARY_NAME} ${N_WARMUP} ${N_SIM} ${FILENAME}
@@ -248,5 +251,10 @@ do
 done
 
 echo
-echo "${BOLD}Full Run Finished! Result files will be found in the results_${N_SIM}M folder"
+
+if [ "$the_world_is_flat" = true ] ; then
+    echo "${BOLD}Full Run Finished! Result files are located in ./results_${N_SIM}M"
+else
+    echo "No files found in ./dpc3_traces"
+fi
 
