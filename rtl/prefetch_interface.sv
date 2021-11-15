@@ -9,6 +9,7 @@ interface prefetch_interface;
     logic 			up_miss_i;				// upper level cache hit / miss
     logic 			up_valid_i;				// upper level cache valid 	-> ((read|write))
     logic 			lo_ready_i;				// lower level cache ready to take requests
+    logic           up_prefetched_i;        // whether line has been prefetched before
     logic 	[63:0]	lo_prefetch_address_o;	// lower level cache prefetch address
     logic 			lo_prefetch_valid_o;	// lower level cache prefetch valid
 
