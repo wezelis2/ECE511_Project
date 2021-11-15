@@ -14,7 +14,7 @@ endclass
 
 `resetall
 `timescale 1ns/10ps
-module prefetch_bop_tb ;
+module prefetch_tb ;
 
 // Length of the branch trace used
 parameter TraceLen = 50000;

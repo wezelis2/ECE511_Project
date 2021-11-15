@@ -8,6 +8,7 @@ module best_offset_prefetcher #(
 	input 		logic 	[WIDTH - 1:0] 	up_address_i,			// upper level cache address
 	input 		logic 					up_miss_i,				// upper level cache hit / miss
 	input 		logic 					up_valid_i,				// upper level cache valid 	-> ((read|write))
+	input 		logic 					up_prefetched_i,		// upper level cache line was prefetched
 	input 		logic 					lo_ready_i,				// lower level cache ready to take requests
 		
 	output 		logic 	[WIDTH - 1:0]	lo_prefetch_address_o,	// lower level cache prefetch address
@@ -25,11 +26,11 @@ module best_offset_prefetcher #(
 	localparam 	int 	TIME_BITS 			=  	12;
 	localparam 	int 	LLC_RATE_MAX 		=  	255;
 	localparam 	int 	GAUGE_MAX 			=  	8191;
-	localparam 	int 	MSHR_THRESHOLD_MAX 	=  	L2_MSHR_COUNT - 4;
+	// localparam 	int 	MSHR_THRESHOLD_MAX 	=  	L2_MSHR_COUNT - 4;
 	localparam 	int 	MSHR_THRESHOLD_MIN 	=  	2;
 	localparam 	int 	LOW_SCORE 			=  	20;
-	localparam 	int 	BAD_SCORE 			=  	(knob_small_llc)	? 10 : 1;
-	localparam 	int 	BANDWIDTH 			=  	(knob_low_bandwidth)? 64 : 16;
+	localparam 	int 	BAD_SCORE 			=  	1; //(knob_small_llc)	? 10 : 1;
+	// localparam 	int 	BANDWIDTH 			=  	(knob_low_bandwidth)? 64 : 16;
 	localparam 	int 	OFFSET_MAX 			= 	40;
 	localparam 	int 	LINE_SIZE 			= 	256;
 	localparam 	int 	LOGLINE				= 	6;
@@ -250,7 +251,7 @@ module best_offset_prefetcher #(
 
 		dq_pop_rr_left_insert();
 
-		if (~hit | prefetched) begin 
+		if (~hit | prefetched_table[set][way]) begin 
 			learn_best_offset(address);
 			issue_prefetch(address, prefetch_offset);
 			// if (prefetch_issued)
@@ -262,9 +263,9 @@ module best_offset_prefetcher #(
 		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
 		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
 
-		// prefetched_table[set][way] 							<= prefetch_bit;
+		prefetched_table[set][way] 							<= prefetch_bit;
 
-		if (prefetched_table[set][way] || prefetch_offset == 0) begin 
+		if (prefetch_bit || prefetch_offset == 0) begin 
 			rr_table_insert((address >> LOGLINE) - prefetch_offset, RIGHT);
 		end 
 
@@ -302,7 +303,7 @@ module best_offset_prefetcher #(
 		end else begin
 			prefetcher_operate(up_address_i, ~up_miss_i & up_valid_i)
 			if (~up_miss_i & up_valid_i) begin 
-				fill_cache(up_address_i, 1'b1);
+				fill_cache(up_address_i, up_prefetched_i & up_valid_i);
 			end 
 		end
 	end
