@@ -1,13 +1,10 @@
+// Best Offset Prefetcher
+// Adapted from DPC2 code --> Paper title: A Best-Offset Prefetcher Author: Pierre Michaud
+// Adapted to be object-oriented and work with DPC3 simulator (Champsim) by Abigail Wezelis
+
 #include <stdio.h>
 #include <stdlib.h>
 #include "cache.h"
-
-// Submission ID: 3
-
-// Paper title: A Best-Offset Prefetcher
-
-// Author: Pierre Michaud
-
 
 //######################################################################################
 //                             PREFETCHER PARAMETERS 
@@ -18,15 +15,18 @@
 // larger offsets.
 
 #define NOFFSETS 46
-int OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-11,12,-12,13,-13,14,-14,15,-15,16,-16,18,-18,20,-20,24,-24,30,-30,32,-32,36,-36,40,-40};
+const int32_t OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-11,12,-12,13,-13,14,-14,15,-15,16,-16,18,-18,20,-20,24,-24,30,-30,32,-32,36,-36,40,-40};
 #define DEFAULT_OFFSET 1
 #define SCORE_MAX 31
 #define ROUND_MAX 100
+
 #define RRINDEX 6 //CHANGE THIS TO CHANGE RR SIZE TO 2^RRINDEX
+#define RRSIZE (1<<RRINDEX)
 #define RRTAG 12
+
 #define DELAYQSIZE 15
 #define DELAY 60
-#define TIME_BITS 12
+
 #define LLC_RATE_MAX 255
 #define GAUGE_MAX 8191
 #define MSHR_THRESHOLD_MAX (L2C_MSHR_SIZE-4)
@@ -36,50 +36,6 @@ int OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,10,-10,11,-
 #define BANDWIDTH ((knob_low_bandwidth)? 64 : 16)
 
 #define VERBOSE 0
-
-
-//######################################################################################
-//                               PREFETCHER STATE
-//######################################################################################
-
-int prefetch_offset;   // 7 bits (6-bit value + 1 sign bit)
-
-// Recent Requests (RR) table: 2 banks, 64 entries per bank, RRTAG bits per entry
-int recent_request[2][1<<RRINDEX]; // 2x64x12 = 1536 bits
-
-// 1 prefetch bit per L2 cache line : 256x8 = 2048 bits 
-int prefetch_bit[L2C_SET][L2C_WAY]; 
-
-
-struct offsets_scores {
-  int score[NOFFSETS];    // log2 SCORE_MAX = 5 bits per entry
-  int max_score;          // log2 SCORE_MAX = 5 bits
-  int best_offset;        // 7 bits (6-bit value + 1 sign bit)
-  int round;              // log2 ROUND_MAX = 7 bits
-  int p;                  // log2 NOFFSETS = 6 bits
-} os;                     // 46x5+5+7+7+6 = 255 bits
-
-
-struct delay_queue {
-  int lineaddr[DELAYQSIZE]; // RRINDEX+RTAG = 18 bits
-  int cycle[DELAYQSIZE];    // TIME_BITS = 12 bits --> THIS IS ONLY NEEDED FOR SOFTWARE IMPL
-  int valid[DELAYQSIZE];    // 1 bit 
-  int tail;                 // log2 DELAYQSIZE = 4 bits
-  int head;                 // log2 DELAYQSIZE = 4 bits
-} dq;                       // 15x(18+12+1)+4+4 = 473 bits
-
-
-struct prefetch_throttle {
-  uint32_t mshr_threshold;     // log2 L2_MSHR_COUNT = 4 bits
-  int prefetch_score;     // log2 SCORE_MAX = 5 bits
-  int llc_rate;           // log2 LLC_RATE_MAX = 8 bits
-  int llc_rate_gauge;     // log2 GAUGE_MAX = 13 bits
-  int last_cycle;         // TIME_BITS = 12 bits
-} pt;                     // 4+5+8+13+12 = 42 bits
-
-// Total prefetcher state: 7 + 1536 + 2048 + 255 + 473 + 42 = 4361 bits 
-
-
 
 //######################################################################################
 //                            SOME MACROS & DEFINITIONS
@@ -95,62 +51,59 @@ struct prefetch_throttle {
 
 #define DEBUG_OUT(str) {if (VERBOSE) printf(str);}
 
-typedef long long t_addr;
+typedef long long addr_t;
 
 //######################################################################################
-//                            RECENT REQUESTS TABLE (RR)
+//                               RECENT REQUESTS TABLE (RR)
 //######################################################################################
 
-void rr_init()
-{
-  int i;
-  for (i=0; i<(1<<RRINDEX); i++) {
-    recent_request[0][i] = 0;
-    recent_request[1][i] = 0;
-  }
+class RRTable {
+  private:
+    uint32_t recent_request[2][RRSIZE]
+
+  private:
+    uint32_t get_left_hash(addr_t lineaddr)
+    {
+      return TRUNCATE(lineaddr^(lineaddr>>RRINDEX),RRINDEX);
+    }
+
+    uint32_t get_right_hash(addr_t lineaddr)
+    {
+      return TRUNCATE(lineaddr^(lineaddr>>(2*RRINDEX)),RRINDEX);
+    }
+
+    uint32_t get_tag(addr_t lineaddr)
+    {
+      return TRUNCATE(lineaddr>>RRINDEX,RRTAG);
+    }
+
+  public:
+    RRTable()
+    {
+      for (int i = 0; i < RRSIZE; i++)
+        recent_request[0][i] = recent_request[1][i] = 0;
+    }
+
+    void insert_left(addr_t lineaddr)
+    {
+      uint32_t hash = get_left_hash(lineaddr);
+      recent_request[0][hash] = get_tag(lineaddr);
+    }
+
+    void insert_right(addr_t lineaddr)
+    {
+      uint32_t hash = get_right_hash(lineaddr);
+      recent_request[1][hash] = get_tag(lineaddr);
+    }
+
+    uint32_t rr_hit(addr_t lineaddr)
+    {
+      uint32_t left_hash = get_left_hash(lineaddr);
+      uint32_t right_hash = get_right_hash(lineaddr);
+      uint32_t tag = get_tag(lineaddr);
+      return (recent_request[0][i] == tag) || (recent_request[1][j] == tag);
+    }
 }
-
-int rr_tag(t_addr lineaddr)
-{
-  return TRUNCATE(lineaddr>>RRINDEX,RRTAG);
-}
-
-
-int rr_index_left(t_addr lineaddr)
-{
-  return TRUNCATE(lineaddr^(lineaddr>>RRINDEX),RRINDEX); //first arg is left "hashing algo"
-}
-
-
-int rr_index_right(t_addr lineaddr)
-{
-  return TRUNCATE(lineaddr^(lineaddr>>(2*RRINDEX)),RRINDEX); //first arg is right "hashing algo"
-}
-
-
-void rr_insert_left(t_addr lineaddr)
-{
-  int i = rr_index_left(lineaddr);
-  recent_request[0][i] = rr_tag(lineaddr);
-}
-
-
-void rr_insert_right(t_addr lineaddr)
-{
-  int i = rr_index_right(lineaddr);
-  recent_request[1][i] = rr_tag(lineaddr);
-}
-
-
-int rr_hit(t_addr lineaddr)
-{
-  int i = rr_index_left(lineaddr);
-  int j = rr_index_right(lineaddr);
-  int tag = rr_tag(lineaddr);
-  return (recent_request[0][i] == tag) || (recent_request[1][j] == tag);
-}
-
-
 
 //######################################################################################
 //                               DELAY QUEUE (DQ)
@@ -161,78 +114,74 @@ int rr_hit(t_addr lineaddr)
 // late prefetches but greater prefetch accuracy and better performance. The delay queue
 // is an imperfect solution to this problem.
 
-// This implementation of the delay queue is specific to the DPC2 simulator, as the DPC2
-// prefetcher can act only at certain clock cycles. In a real processor, the delay queue
-// implementation can be simpler.
-
 // Abby's notes: basically this can't be written as a simple circular queue because this
 // software impl doesn't get a steady "clock pulse" so instead they're tracking latencies,
 // i.e. "has enough time passed since the last check for me to insert the head into RR Table"
 
-void dq_init()
-{
-  int i;
-  for (i=0; i<DELAYQSIZE; i++) {
-    dq.lineaddr[i] = 0;
-    dq.cycle[i] = 0;
-    dq.valid[i] = 0;
-  }
-  dq.tail = 0;
-  dq.head = 0;
-  DEBUG_OUT("DQ_INIT\n");
-}
+class DelayQueue {
+  private:
+    addr_t addr_arr[DELAYQSIZE];
+    uint64_t cycle_arr[DELAYQSIZE];
+    bool valid_arr[DELAYQSIZE];
+    uint32_t head, tail;
 
+    const uint32_t max_delay_idx = DELAYQSIZE - 1;
 
-void dq_push(t_addr lineaddr)
-{
-  // enqueue one line address
-  if (dq.valid[dq.tail]) {
-    // delay queue is full
-    // dequeue the oldest entry and write the "left" bank of the RR table
-    rr_insert_left(dq.lineaddr[dq.head]);
-    INCREMENT(dq.head,DELAYQSIZE);
-  }
-  dq.lineaddr[dq.tail] = TRUNCATE(lineaddr,RRINDEX+RRTAG);
-  dq.cycle[dq.tail] = TRUNCATE(current_core_cycle[0],TIME_BITS);
-  dq.valid[dq.tail] = 1;
-  INCREMENT(dq.tail,DELAYQSIZE); //this is just a circular ++ (wrap back around to zero after last entry)
-}
-
-
-int dq_ready()
-{
-  // tells whether or not the oldest entry is ready to be dequeued
-  if (! dq.valid[dq.head]) {
-    // delay queue is empty
-    return 0;
-  }
-  int cycle = TRUNCATE(current_core_cycle[0],TIME_BITS);
-  int issuecycle = dq.cycle[dq.head];
-  int readycycle = TRUNCATE(issuecycle+DELAY,TIME_BITS);
-  if (readycycle >= issuecycle) {
-    return (cycle < issuecycle) || (cycle >= readycycle);
-  } else {
-    return (cycle < issuecycle) && (cycle >= readycycle);
-  }
-}
-
-
-void dq_pop()
-{
-  // dequeue the entries that are ready to be dequeued,
-  // and do a write in the "left" bank of the RR table for each of them
-  int i;
-  for (i=0; i<DELAYQSIZE; i++) {
-    if (! dq_ready()) {
-      break;
+  private:
+    //return whether the current head of the queue is ready to be inserted into the rr_table
+    bool ready()
+    {
+      if (!valid_arr[head])
+        return 0;
+  
+      //since we're using uint_64 let's ignore the case where our cycle count will roll over to 0
+      return current_core_cycle[0]; >= cycle_arr[head] + DELAY;
     }
-    rr_insert_left(dq.lineaddr[dq.head]);
-    dq.valid[dq.head] = 0;
-    INCREMENT(dq.head,DELAYQSIZE);
-    DEBUG_OUT("SUCCESSFUL TRANSFER FROM DQ TO RR\n");
-  }
-}
 
+    void pop_one(RRTable *rr_table)
+    {
+      if (!ready())
+        return;
+
+      rr_table->insert_left(addr_arr[head]);
+      valid_arr[head] = 0;
+      head = head == max_delay_idx ? 0 : (head + 1);
+    }
+
+  public:
+    DelayQueue()
+    {
+      for (int i = 0; i < DELAYQSIZE; i++)
+      {
+        addr_arr[i] = 0;
+        cycle_arr[i] = 0;
+        valid_arr[i] = false;
+      }
+      head = tail = 0;
+    }
+
+    //push one new address onto the queue
+    void push(RRTable *rr_table, addr_t lineaddr)
+    {
+      if (valid_arr[tail]) //queue is full
+      {
+        rr_table->insert_left(addr_arr[head])
+        head = head == max_delay_idx ? 0 : (head + 1);
+      }
+
+      addr_arr[tail] = lineaddr;
+      cycle_arr[tail] = current_core_cycle[0];
+      valid_arr[tail] = 1;
+      tail = tail == max_delay_idx ? 0 : (tail + 1);
+    }
+
+    //write as many entries as are ready into the rr_table
+    void pop(RRTable *rr_table)
+    {
+      while (ready())
+        pop_one(rr_table);
+    }
+}
 
 
 //######################################################################################
@@ -244,69 +193,80 @@ void dq_pop()
 // LLC hit/miss information,...) can be neither modified nor observed. Consequently,
 // we ignore hardware implementation considerations here.
 
+class PrefetchThrottle {
+  private:
+    uint32_t mshr_threshold; // log2 L2_MSHR_COUNT = 4 bits
+    int32_t prefetch_score;  // log2 SCORE_MAX = 5 bits
+    int64_t llc_rate;            // log2 LLC_RATE_MAX = 8 bits
+    int64_t llc_rate_gauge;      // log2 GAUGE_MAX = 13 bits
+    uint64_t last_cycle;          
 
-void pt_init()
-{
-  pt.mshr_threshold = MSHR_THRESHOLD_MAX;
-  pt.prefetch_score = SCORE_MAX;
-  pt.llc_rate = 0;
-  pt.llc_rate_gauge = GAUGE_MAX/2;
-  pt.last_cycle = 0;
-  DEBUG_OUT("PT INIT\n");
-}
-
-
-// The pt_update_mshr_threshold function is for adjusting the MSHR threshold
-// (a prefetch request is dropped when the MSHR occupancy exceeds the threshold)
-
-void pt_update_mshr_threshold()
-{
-  if ((pt.prefetch_score > LOW_SCORE) || (pt.llc_rate > (2*BANDWIDTH))) {
-    // prefetch accuracy not too bad, or low bandwidth requirement
-    // ==> maximum prefetch aggressiveness
-    pt.mshr_threshold = MSHR_THRESHOLD_MAX;
-  } else if (pt.llc_rate < BANDWIDTH) {
-    // LLC access rate exceeds memory bandwidth, implying that there are some LLC hits.
-    // If there are more LLC misses than hits, perhaps memory bandwidth saturates.
-    // If there are more LLC hits than misses, the MSHR is probably not stressed.
-    // So we set the MSHR threshold low.
-    pt.mshr_threshold = MSHR_THRESHOLD_MIN;
-  } else {
-    // in-between situation: we set the MSHR threshold proportionally to the (inverse) LLC rate
-    pt.mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (pt.llc_rate - BANDWIDTH) / BANDWIDTH;
-  }
-}
-
-
-// The pt_llc_access function estimates the average time between consecutive LLC accesses.
-// It is called on every LLC access.
-
-void pt_llc_access()
-{
-  // update the gauge
-  int cycle = TRUNCATE(current_core_cycle[0],TIME_BITS);
-  int dt = TRUNCATE(cycle - pt.last_cycle,TIME_BITS);
-  pt.last_cycle = cycle;
-  pt.llc_rate_gauge += dt - pt.llc_rate;
-
-  // if the gauge reaches its upper limit, increment the rate counter
-  // if the gauge reaches its lower limit, decrement the rate counter
-  // otherwise leave the rate counter unchanged
-  if (pt.llc_rate_gauge > GAUGE_MAX) {
-    pt.llc_rate_gauge = GAUGE_MAX;
-    if (pt.llc_rate < LLC_RATE_MAX) {
-      pt.llc_rate++;
-      pt_update_mshr_threshold();
+  public:
+    PrefetchThrottle()
+    {
+      mshr_threshold = MSHR_THRESHOLD_MAX;
+      prefetch_score = SCORE_MAX;
+      llc_rate = 0;
+      llc_rate_gauge = GAUGE_MAX/2;
+      last_cycle = 0;
     }
-  } else if (pt.llc_rate_gauge < 0) {
-    pt.llc_rate_gauge = 0;
-    if (pt.llc_rate > 0) {
-      pt.llc_rate--;
-      pt_update_mshr_threshold();
-    }
-  }
-}
 
+    // The pt_update_mshr_threshold function is for adjusting the MSHR threshold
+    // (a prefetch request is dropped when the MSHR occupancy exceeds the threshold)
+    void update_mshr_threshold()
+    {
+      if ((prefetch_score > LOW_SCORE) || (llc_rate > (2*BANDWIDTH)))
+      {
+        // prefetch accuracy not too bad, or low bandwidth requirement
+        // ==> maximum prefetch aggressiveness
+        pt.mshr_threshold = MSHR_THRESHOLD_MAX;
+      }
+      else if (llc_rate < BANDWIDTH)
+      {
+        // LLC access rate exceeds memory bandwidth, implying that there are some LLC hits.
+        // If there are more LLC misses than hits, perhaps memory bandwidth saturates.
+        // If there are more LLC hits than misses, the MSHR is probably not stressed.
+        // So we set the MSHR threshold low.
+        mshr_threshold = MSHR_THRESHOLD_MIN;
+      }
+      else
+      {
+        // in-between situation: we set the MSHR threshold proportionally to the (inverse) LLC rate
+        mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (pt.llc_rate - BANDWIDTH) / BANDWIDTH;
+      }
+    }
+
+    // The pt_llc_access function estimates the average time between consecutive LLC accesses.
+    // It is called on every LLC access.
+    void pt_llc_access()
+    {
+      // update the gauge
+      uint64_t cycle = current_core_cycle[0];
+      uint64_t dt = cycle - pt.last_cycle;
+      last_cycle = cycle;
+      llc_rate_gauge += dt - llc_rate;
+
+      // if the gauge reaches its upper limit, increment the rate counter
+      // if the gauge reaches its lower limit, decrement the rate counter
+      // otherwise leave the rate counter unchanged
+      if (llc_rate_gauge > GAUGE_MAX)
+      {
+        llc_rate_gauge = GAUGE_MAX;
+        if (llc_rate < LLC_RATE_MAX) {
+          llc_rate++;
+          update_mshr_threshold();
+        }
+      }
+      else if (llc_rate_gauge < 0)
+      {
+        llc_rate_gauge = 0;
+        if (llc_rate > 0) {
+          llc_rate--;
+          update_mshr_threshold();
+        }
+      }
+    }
+}
 
 //######################################################################################
 //                               OFFSETS SCORES (OS)
@@ -314,94 +274,197 @@ void pt_llc_access()
 
 // A method for determining the best offset value
 
-void os_reset()
+class OffsetScore
 {
-  int i;
-  for (i=0; i<NOFFSETS; i++) {
-    os.score[i] = 0;
-  }
-  os.max_score = 0;
-  os.best_offset = 0;
-  os.round = 0;
-  os.p = 0;
-}
+  private:
+    int32_t score[NOFFSETS];
+    int32_t max_score, best_offset, round, curr_idx, prefetch_offset;
 
-
-// The os_learn_best_offset function tests one offset at a time, trying to determine
-// if the current line would have been successfully prefetched with that offset
-
-void os_learn_best_offset(t_addr lineaddr)
-{
-  int testoffset = OFFSET[os.p];
-  t_addr testlineaddr = lineaddr - testoffset;
-
-  if (SAMEPAGE(lineaddr,testlineaddr) && rr_hit(testlineaddr)) {
-    // the current line would likely have been prefetched successfully with that offset
-    // ==> increment the score 
-    os.score[os.p]++;
-    if (os.score[os.p] >= os.max_score) {
-      os.max_score = os.score[os.p];
-      os.best_offset = testoffset;
-      DEBUG_OUT("BEST OFFSET UPDATED\n");
+  private:
+    void reset()
+    {
+      for (int i = 0; i < NOFFSETS; i++)
+        score[i] = 0;
+      max_score = best_offset = round = curr_idx = 0;
+      prefetch_offset = DEFAULT_OFFSET;
     }
-  }
 
-  if (os.p == (NOFFSETS-1)) {
-    // one round finished
-    os.round++;
+  public:
+    OffsetScore()
+    {
+      reset();
+    }
 
-    if ((os.max_score == SCORE_MAX) || (os.round == ROUND_MAX)) {
-      // learning phase is finished, update the prefetch offset
-      prefetch_offset = (os.best_offset != 0)? os.best_offset : DEFAULT_OFFSET;
-      pt.prefetch_score = os.max_score;
-      pt_update_mshr_threshold();
+    int32_t get_prefetch_offset()
+    {
+      return prefetch_offset;
+    }
 
-      if (os.max_score <= BAD_SCORE) {
-	// prefetch accuracy is likely to be very low ==> turn the prefetch off 
-	prefetch_offset = 0;
+    // The os_learn_best_offset function tests one offset at a time, trying to determine
+    // if the current line would have been successfully prefetched with that offset
+    void learn_best_offset(RRTable *rr_table, addr_t lineaddr)
+    {
+      int32_t testoffset = OFFSET[curr_idx];
+      addr_t testlineaddr = lineaddr - testoffset;
+      bool same_page = (((lineaddr) ^ (testlineaddr)) >> 6) == 0;
+
+      if (same_page && rr_table->hit(testlineaddr))
+      {
+        score[curr_idx]++; //current line would've likely been prefetched successfully w/ that offset 
+        if (score[curr_idx] >= max_score)
+        {
+          max_score = score[curr_idx];
+          best_offset = testoffset;
+        }
       }
-      // new learning phase starts
-      os_reset();
-      return;
+
+      if (curr_idx == (NOFFSETS-1)) // one round finished
+      {
+        round++;
+        if ((max_score == SCORE_MAX) || (round == ROUND_MAX)) //learning phase is finished, update prefetch offset
+        {    
+          prefetch_offset = (best_offset != 0) ? best_offset : DEFAULT_OFFSET;
+          prefetch_score = max_score;
+          pt_update_mshr_threshold();
+
+          if (max_score <= BAD_SCORE) //prefetch accuracy likely to be very low -> turn the prefetch off 
+            prefetch_offset = 0;
+
+          // new learning phase starts
+          reset();
+          return;
+        }
+      }
+
+      curr_idx = (curr_idx == NOFFSETS - 1) ? 0 : curr_idx + 1; // prepare to test the next offset
     }
-  }
-  INCREMENT(os.p,NOFFSETS); // prepare to test the next offset
 }
 
-
-//######################################################################################
-//                               OFFSET PREFETCHER
-//######################################################################################
-
-// Issue at most one prefetch request. The prefetch line address is obtained by adding
-// the prefetch offset to the current line address
-
-int issue_prefetch(CACHE *my_cache, t_addr lineaddr, int offset, uint64_t ip)
+class BestOffsetPrefetcher
 {
-  if (offset == 0) {
-    // The prefetcher is currently turned off.
-    // Just push the line address into the delay queue for best-offset learning.
-    dq_push(lineaddr);
-    return 0; 
-  }
-  if (! SAMEPAGE(lineaddr,lineaddr+offset)) {
-    // crossing the page boundary, no prefetch request issued
-    return 0;
-  }
-  if (my_cache->get_occupancy(0, 0) /*MSHR occupancy*/ < pt.mshr_threshold) {
-    // prefetch into L2
-    dq_push(lineaddr);
-    DEBUG_OUT("REQUEST L2 PREFETCH\n");
-    return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_L2, 0);
-  }
-  // could not prefetch into L2
-  // try to prefetch into LLC if prefetch accuracy not too bad
-  if (pt.prefetch_score > LOW_SCORE) {
-    DEBUG_OUT("REQUEST LLC PREFETCH\n");
-    return my_cache->prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, FILL_LLC, 0);
-  }
-  return 0;
+  private:
+    RRTable *rr;
+    DelayQueue *dq;
+    PrefetchThrottle *pt;
+    OffsetScore *os;
+    int32_t prefetch_bit[L2C_SET][L2C_WAY]; //1 prefetch bit per L2 cache line : 256x8 = 2048 bits 
+
+  private:
+    // Issue at most one prefetch request. The prefetch line address is obtained by adding
+    // the prefetch offset to the current line address
+    int issue_prefetch(addr_t lineaddr, int32_t offset, uint64_t ip, uint32_t mshr_occupancy, bool *do_prefetch_line, int *prefetch_fill_level)
+    {
+      if (offset == 0)
+      {
+        // The prefetcher is currently turned off.
+        // Just push the line address into the delay queue for best-offset learning.
+        dq.push(rr, lineaddr);
+        return 0; 
+      }
+
+      same_page = (((lineaddr) ^ (lineaddr+offset)) >> 6) == 0;
+      if (!same_page) // crossing the page boundary, no prefetch request issued  
+        return 0;
+
+      if (mshr_occupancy < pt.mshr_threshold) // prefetch into L2
+      {    
+        dq.push(rr, lineaddr);
+        *do_prefetch_line = true;
+        *prefetch_fill_level = FILL_L2;
+        return 0;
+      }
+
+      // could not prefetch into L2
+      // try to prefetch into LLC if prefetch accuracy not too bad
+      if (pt.prefetch_score > LOW_SCORE)
+      {
+        *do_prefetch_line = true;
+        *prefetch_fill_level = FILL_LLC;
+        return 0;
+      }
+
+      return 0;
+    }
+
+  public:
+    BestOffsetPrefetcher()
+    {
+      rr = new RRTable();
+      dq = new DelayQueue();
+      pt = new PrefetchThrottle();
+      os = new OffsetScore();
+      for (int32_t s = 0; s < L2C_SET; s++)
+        for (int32_t w = 0; w < L2C_WAY; w++)
+          prefetch_bit[s][w] = 0;
+    }
+
+    uint32_t operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint32_t mshr_occupancy, bool *do_prefetch_line, int *prefetch_fill_level)
+    {
+      addr_t lineaddr = addr >> LOGLINE;
+
+      int32_t s = get_set(addr);
+      int32_t w = get_way(addr, s);
+      bool l2_hit = w < NUM_WAY;
+      int32_t prefetched = 0;
+
+      if (l2_hit)
+      {
+        // read the prefetch bit, and reset it
+        prefetched = prefetch_bit[s][w];
+        prefetch_bit[s][w] = 0;
+      }
+      else
+        os->pt_llc_access();
+     
+      dq->pop(rr);
+
+      int prefetch_issued = 0;
+      if (!l2_hit || prefetched)
+      {
+        os->learn_best_offset(lineaddr);
+
+        prefetch_issued = issue_prefetch(lineaddr, prefetch_offset, ip, mshr_occupancy, do_prefetch_line, prefetch_fill_level);
+
+        if (prefetch_issued) // assume the prefetch request is a L2 miss (we don't know actually)
+          pt_llc_access();
+      }
+
+      return metadata_in;
+    }
+
+    uint32_t cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in)
+    {
+      // In this version of the DPC2 simulator, the "prefetch" boolean passed
+      // as input here is not reset whenever a demand request hits in the L2
+      // MSHR on an in-flight prefetch request. Fortunately, this is the information
+      // we need for updating the RR table for best-offset learning.
+      // However, the prefetch bit stored in the L2 is not completely accurate
+      // (though hopefully this does not impact performance too much).
+      // In a real hardware implementation of the BO prefetcher, we would distinguish
+      // "prefetched" and "demand-requested", which are independent informations.
+      
+      addr_t lineaddr = addr >> LOGLINE;
+
+      // write the prefetch bit 
+      int s = get_set(addr);
+      int w = get_way(addr,s);
+      prefetch_bit[s][w] = prefetch;
+
+      // write the "right" bank of the RR table
+      addr_t baselineaddr;
+      if (prefetch || (prefetch_offset == 0))
+      {
+        baselineaddr = lineaddr - prefetch_offset;
+        bool same_page = ((((lineaddr) ^ (baselineaddr)) >> 6) == 0)
+        if (same_page)
+          rr.insert_right(baselineaddr);
+      }
+
+      return metadata_in;
+    }
 }
+
+vector<BestOffsetPrefetcher> my_prefetchers;
 
 
 //######################################################################################
@@ -411,90 +474,25 @@ int issue_prefetch(CACHE *my_cache, t_addr lineaddr, int offset, uint64_t ip)
 
 void CACHE::l2c_prefetcher_initialize()
 {
-  prefetch_offset = DEFAULT_OFFSET;
-  rr_init();
-  os_reset();
-  dq_init();
-  pt_init();
-  int i,j;
-  for (i=0; i<L2C_SET; i++) {
-    for (j=0; j<L2C_WAY; j++) {
-      prefetch_bit[i][j] = 0;
-    }
-  }
-  DEBUG_OUT("PREFETCHER INIT\n");
+  my_prefetchers = vector<BestOffsetPrefetcher>(NUM_CPUS, BestOffsetPrefetcher());
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
 {
-  t_addr lineaddr = addr >> LOGLINE;
+  bool do_prefetch_line = false;
+  int prefetch_fill_level = 0;
+  
+  uint32_t to_return = my_prefetchers[cpu].operate(addr, ip, cache_hit, type, metadata_in, get_occupancy(0, 0), &do_prefetch_line, &prefetch_fill_level);
+  
+  if (do_prefetch_line)
+    prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, prefetch_fill_level, 0);
 
-  int s = get_set(addr);
-  int w = get_way(addr,s);
-  int l2_hit = (w>=0);
-  int prefetched = 0;
-
-  if (l2_hit) {
-    // read the prefetch bit, and reset it
-    prefetched = prefetch_bit[s][w];
-    prefetch_bit[s][w] = 0;
-  } else {
-    pt_llc_access();
-  }
- 
-  dq_pop();
-
-  int prefetch_issued = 0;
-
-  if (! l2_hit || prefetched) {
-    os_learn_best_offset(lineaddr);
-
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Warning from Abby: yo passing in "this" is not good programming and super hacky, but it 
-    // lets us avoid making this whole file object-oriented, since we're only running with 1 CPU
-    // This will break if we try to run with more than one core (In order to do that, we likely 
-    // would want to make "BestOffsetPrefetcher" class that extends CACHE class or something like 
-    // that so we could add our extra state and functions specific to Best Offset prefetcher
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    prefetch_issued = issue_prefetch(this, lineaddr, prefetch_offset, ip);
-
-    if (prefetch_issued) {
-      // assume the prefetch request is a L2 miss (we don't know actually)
-      pt_llc_access();
-    }
-  }
-
-  return metadata_in;
+  return to_return;
 }
 
 uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t way, uint8_t prefetch, uint64_t evicted_addr, uint32_t metadata_in)
 {
-  // In this version of the DPC2 simulator, the "prefetch" boolean passed
-  // as input here is not reset whenever a demand request hits in the L2
-  // MSHR on an in-flight prefetch request. Fortunately, this is the information
-  // we need for updating the RR table for best-offset learning.
-  // However, the prefetch bit stored in the L2 is not completely accurate
-  // (though hopefully this does not impact performance too much).
-  // In a real hardware implementation of the BO prefetcher, we would distinguish
-  // "prefetched" and "demand-requested", which are independent informations.
-  
-  t_addr lineaddr = addr >> LOGLINE;
-
-  // write the prefetch bit 
-  int s = get_set(addr);
-  int w = get_way(addr,s);
-  prefetch_bit[s][w] = prefetch;
-
-  // write the "right" bank of the RR table
-  t_addr baselineaddr;
-  if (prefetch || (prefetch_offset == 0)) {
-    baselineaddr = lineaddr - prefetch_offset;
-    if (SAMEPAGE(lineaddr,baselineaddr)) {
-      rr_insert_right(baselineaddr);
-    }
-  }
-
-  return metadata_in;
+  return my_prefetchers[cpu].cache_fill(addr, set, way, prefetch, evicted_addr, metadata_in);
 }
 
 void CACHE::l2c_prefetcher_final_stats()
