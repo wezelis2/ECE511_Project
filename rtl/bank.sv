@@ -11,6 +11,7 @@ module bank #(
 	input 		logic 					read_i,
 	input 		logic 					write_i,
 	input 		logic 	[WIDTH - 1:0] 	data_i,
+	input 		logic 	[WIDTH - 1:0]	read_address_i,
 
 	output 		logic 					hit_o,				
 	output	 	logic 					data_o,
@@ -41,8 +42,8 @@ module bank #(
 		return TRUNCATE(data ^ (data >> (INDEX_WIDTH << SIDE)), INDEX_WIDTH);
 	endfunction
 
-	assign hit 		= read_i & bank_data[get_index(data_i)] == get_tag(data_i);
-	assign data_o 	= bank_data[get_index(data_i)];
+	assign hit 		= read_i & bank_data[get_index(read_address_i)] == get_tag(read_address_i);
+	assign data_o 	= bank_data[get_index(read_address_i)];
 	assign valid_o 	= read_i;
 
 	always_ff @(posedge clk) begin
