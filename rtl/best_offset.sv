@@ -75,6 +75,7 @@ module best_offset_prefetcher #(
 	logic 											hit_left, 	hit_right;
 	logic 											data_left, 	data_right;
 	logic 											valid_left, valid_right;
+	logic 											rr_hit;
 
 	// delay queue signals
 	logic 											delay_queue_enq;
@@ -205,7 +206,7 @@ module best_offset_prefetcher #(
 		logic 	signed 	[$clog2(OFFSET_MAX) - 1:0] 	test_offset = OFFSET[curr_offset_idx];
 		logic 			[WIDTH - 1:0] 				test_addr 	= address - test_offset; 
 
-		if (rr_check_hit(test_addr)) begin 
+		if (rr_hit) begin 
 			score[curr_offset_idx] 	<= score[curr_offset_idx] + 1 == SCORE_MAX ? SCORE_MAX : score[curr_offset_idx] + 1;
 			curr_max_score 			<= next_max_score;
 			best_offset_idx 		<= next_best_offset_idx;
@@ -261,9 +262,9 @@ module best_offset_prefetcher #(
 		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
 		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
 
-		prefetched_table[set][way] 							<= prefetch_bit;
+		// prefetched_table[set][way] 							<= prefetch_bit;
 
-		if (prefetch_bit || prefetch_offset == 0) begin 
+		if (prefetched_table[set][way] || prefetch_offset == 0) begin 
 			rr_table_insert((address >> LOGLINE) - prefetch_offset, RIGHT);
 		end 
 
@@ -281,16 +282,35 @@ module best_offset_prefetcher #(
 		return 0;
 	endfunction
 
-	function logic rr_check_hit (logic [WIDTH - 1:0] address);
+	function logic rr_check_hit (logic [WIDTH - 1:0] address, logic valid);
 		read_left 	= 1;
 		read_right	= 1;
 		data_left	= address;
 		data_right	= address;
 
-		return hit_left | hit_right;
+		return valid & (hit_left | hit_right);
 	endfunction
 
-	
+	//######################################################################################
+	//									ALWAYS BLOCKS
+	//######################################################################################
+
+
+	always_ff @(posedge clk) begin
+		if (rst) begin
+			reset();
+		end else begin
+			prefetcher_operate(up_address_i, ~up_miss_i & up_valid_i)
+			if (~up_miss_i & up_valid_i) begin 
+				fill_cache(up_address_i, 1'b1);
+			end 
+		end
+	end
+
+	always_comb begin 
+		set_defaults();
+		rr_hit = rr_check_hit(up_address_i, up_valid_i);
+	end
 
 endmodule
 
