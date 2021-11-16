@@ -37,7 +37,7 @@ const int32_t OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,1
 
 #define LOGLINE 6
 
-#define VERBOSE 1
+#define VERBOSE 0
 
 #define TRUNCATE(x,nbits) (((x) & ((1<<(nbits))-1)))
 
@@ -410,34 +410,34 @@ class BestOffsetPrefetcher
       if (!same_page) // crossing the page boundary, no prefetch request issued  
         return 0;
 
-//       if (mshr_occupancy < pt->get_mshr_threshold()) // prefetch into L2
-//       {    
-// #ifdef VERBOSE
-//         //printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
-// #endif
+      if (mshr_occupancy < pt->get_mshr_threshold()) // prefetch into L2
+      {    
+#ifdef VERBOSE
+        //printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
+#endif
         dq->push(rr, lineaddr);
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_L2;
         return 0;
-      // }
+      }
 
-//       // could not prefetch into L2
-//       // try to prefetch into LLC if prefetch accuracy not too bad
-//       if (pt->get_prefetch_score() > LOW_SCORE)
-//       {
-// #ifdef VERBOSE
-//         printf("PREFETCHING INTO L2 w/ PREFETCH SCORE %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), mshr_occupancy);
-// #endif
-//         *do_prefetch_line = true;
-//         *prefetch_fill_level = FILL_LLC;
-//         return 0;
-//       }
+      // could not prefetch into L2
+      // try to prefetch into LLC if prefetch accuracy not too bad
+      if (pt->get_prefetch_score() > LOW_SCORE)
+      {
+#ifdef VERBOSE
+        printf("PREFETCHING INTO L2 w/ PREFETCH SCORE %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), mshr_occupancy);
+#endif
+        *do_prefetch_line = true;
+        *prefetch_fill_level = FILL_LLC;
+        return 0;
+      }
 
-// #ifdef VERBOSE
-//         printf("NO PREFETCH REQUEST BECAUSE PREFETCH SCORE %d IS NOT GREATER THAN %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), LOW_SCORE, mshr_occupancy);
-// #endif
+#ifdef VERBOSE
+        printf("NO PREFETCH REQUEST BECAUSE PREFETCH SCORE %d IS NOT GREATER THAN %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), LOW_SCORE, mshr_occupancy);
+#endif
 
-//       return 0;
+      return 0;
     }
 
   public:
