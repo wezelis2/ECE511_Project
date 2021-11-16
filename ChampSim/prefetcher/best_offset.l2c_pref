@@ -377,7 +377,7 @@ class BestOffsetPrefetcher
         return 0; 
       }
 
-      same_page = (((lineaddr) ^ (lineaddr+offset)) >> 6) == 0;
+      bool same_page = (((lineaddr) ^ (lineaddr+offset)) >> 6) == 0;
       if (!same_page) // crossing the page boundary, no prefetch request issued  
         return 0;
 
@@ -413,11 +413,11 @@ class BestOffsetPrefetcher
           prefetch_bit[s][w] = 0;
     }
 
-    uint32_t operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint32_t mshr_occupancy, int32_t set, int32_t way, bool *do_prefetch_line, int *prefetch_fill_level)
+    uint32_t operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint32_t mshr_occupancy, int32_t set, int32_t way, int num_way, bool *do_prefetch_line, int *prefetch_fill_level)
     {
       addr_t lineaddr = addr >> LOGLINE;
 
-      bool l2_hit = way < NUM_WAY;
+      bool l2_hit = way < num_way;
       int32_t prefetched = 0;
 
       if (l2_hit)
@@ -427,19 +427,19 @@ class BestOffsetPrefetcher
         prefetch_bit[set][way] = 0;
       }
       else
-        os->llc_access();
+        pt->llc_access();
      
       dq->pop(rr);
 
       int prefetch_issued = 0;
       if (!l2_hit || prefetched)
       {
-        os->learn_best_offset(rr_table, pt, lineaddr);
+        os->learn_best_offset(rr, pt, lineaddr);
 
-        prefetch_issued = issue_prefetch(lineaddr, prefetch_offset, ip, mshr_occupancy, do_prefetch_line, prefetch_fill_level);
+        prefetch_issued = issue_prefetch(lineaddr, os->get_prefetch_offset(), ip, mshr_occupancy, do_prefetch_line, prefetch_fill_level);
 
         if (prefetch_issued) // assume the prefetch request is a L2 miss (we don't know actually)
-          pt_llc_access();
+          pt->llc_access();
       }
 
       return metadata_in;
@@ -463,10 +463,10 @@ class BestOffsetPrefetcher
 
       // write the "right" bank of the RR table
       addr_t baselineaddr;
-      if (prefetch || (prefetch_offset == 0))
+      if (prefetch || (os->get_prefetch_offset() == 0))
       {
         baselineaddr = lineaddr - prefetch_offset;
-        bool same_page = ((((lineaddr) ^ (baselineaddr)) >> 6) == 0)
+        bool same_page = ((((lineaddr) ^ (baselineaddr)) >> 6) == 0);
         if (same_page)
           rr.insert_right(baselineaddr);
       }
@@ -495,10 +495,13 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
   int32_t s = get_set(addr);
   int32_t w = get_way(addr, s);
   
-  uint32_t to_return = my_prefetchers[cpu].operate(addr, ip, cache_hit, type, metadata_in, get_occupancy(0, 0), s, w, &do_prefetch_line, &prefetch_fill_level);
+  uint32_t to_return = my_prefetchers[cpu].operate(addr, ip, cache_hit, type, metadata_in, get_occupancy(0, 0), s, w, num_way, &do_prefetch_line, &prefetch_fill_level);
   
   if (do_prefetch_line)
+  {
+    addr_t lineaddr = addr >> LOGLINE;
     prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, prefetch_fill_level, 0);
+  }
 
   return to_return;
 }
