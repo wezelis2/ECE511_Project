@@ -923,7 +923,7 @@ int main(int argc, char** argv)
     elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
 
     //also print this to std err so we can see the output
-    cerr << "IPC = " << ((float) ooo_cpu[i].finish_sim_instr / ooo_cpu[i].finish_sim_cycle) << " ";
+    cerr << "IPC = " << ((float) ooo_cpu[0].finish_sim_instr / ooo_cpu[0].finish_sim_cycle) << " ";
     
     cout << endl << "ChampSim completed all CPUs" << endl;
     if (NUM_CPUS > 1) {
