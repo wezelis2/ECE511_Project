@@ -253,7 +253,7 @@ class PrefetchThrottle {
 
     // The pt_llc_access function estimates the average time between consecutive LLC accesses.
     // It is called on every LLC access.
-    void pt_llc_access()
+    void llc_access()
     {
       // update the gauge
       uint64_t cycle = current_core_cycle[0];
@@ -465,10 +465,10 @@ class BestOffsetPrefetcher
       addr_t baselineaddr;
       if (prefetch || (os->get_prefetch_offset() == 0))
       {
-        baselineaddr = lineaddr - prefetch_offset;
+        baselineaddr = lineaddr - os->get_prefetch_offset();
         bool same_page = ((((lineaddr) ^ (baselineaddr)) >> 6) == 0);
         if (same_page)
-          rr.insert_right(baselineaddr);
+          rr->insert_right(baselineaddr);
       }
 
       return metadata_in;
@@ -495,12 +495,12 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
   int32_t s = get_set(addr);
   int32_t w = get_way(addr, s);
   
-  uint32_t to_return = my_prefetchers[cpu].operate(addr, ip, cache_hit, type, metadata_in, get_occupancy(0, 0), s, w, num_way, &do_prefetch_line, &prefetch_fill_level);
+  uint32_t to_return = my_prefetchers[cpu].operate(addr, ip, cache_hit, type, metadata_in, get_occupancy(0, 0), s, w, NUM_WAY, &do_prefetch_line, &prefetch_fill_level);
   
   if (do_prefetch_line)
   {
     addr_t lineaddr = addr >> LOGLINE;
-    prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr+offset)<<LOGLINE, prefetch_fill_level, 0);
+    prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr + os->get_prefetch_offset())<<LOGLINE, prefetch_fill_level, 0);
   }
 
   return to_return;
