@@ -234,6 +234,10 @@ class PrefetchThrottle {
       {
         // prefetch accuracy not too bad, or low bandwidth requirement
         // ==> maximum prefetch aggressiveness
+#ifdef VERBOSE
+        if (mshr_threshold != MSHR_THRESHOLD_MAX)
+          printf("CHANGING MSHR THRESHOLD FROM %d TO MAX %d\n", mshr_threshold, MSHR_THRESHOLD_MAX);
+#endif
         mshr_threshold = MSHR_THRESHOLD_MAX;
       }
       else if (llc_rate < BANDWIDTH)
@@ -242,10 +246,19 @@ class PrefetchThrottle {
         // If there are more LLC misses than hits, perhaps memory bandwidth saturates.
         // If there are more LLC hits than misses, the MSHR is probably not stressed.
         // So we set the MSHR threshold low.
+#ifdef VERBOSE
+        if (mshr_threshold != MSHR_THRESHOLD_MIN)
+          printf("CHANGING MSHR THRESHOLD FROM %d TO MIN %d\n", mshr_threshold, MSHR_THRESHOLD_MIN);
+#endif
         mshr_threshold = MSHR_THRESHOLD_MIN;
       }
       else
       {
+#ifdef VERBOSE
+        uint32_t new_val = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (llc_rate - BANDWIDTH) / BANDWIDTH;
+        if (mshr_threshold != new_val)
+          printf("CHANGING MSHR THRESHOLD FROM %d TO %d\n", mshr_threshold, MSHR_THRESHOLD_MIN);
+#endif
         // in-between situation: we set the MSHR threshold proportionally to the (inverse) LLC rate
         mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (llc_rate - BANDWIDTH) / BANDWIDTH;
       }
