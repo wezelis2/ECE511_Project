@@ -413,6 +413,11 @@ class BestOffsetPrefetcher
           prefetch_bit[s][w] = 0;
     }
 
+    int32_t get_prefetch_offset()
+    {
+      return os->get_prefetch_offset();
+    }
+
     uint32_t operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in, uint32_t mshr_occupancy, int32_t set, int32_t way, int num_way, bool *do_prefetch_line, int *prefetch_fill_level)
     {
       addr_t lineaddr = addr >> LOGLINE;
@@ -500,7 +505,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
   if (do_prefetch_line)
   {
     addr_t lineaddr = addr >> LOGLINE;
-    prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr + os->get_prefetch_offset())<<LOGLINE, prefetch_fill_level, 0);
+    prefetch_line(ip, lineaddr<<LOGLINE, (lineaddr + my_prefetchers[cpu].get_prefetch_offset())<<LOGLINE, prefetch_fill_level, 0);
   }
 
   return to_return;
