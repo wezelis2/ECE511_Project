@@ -859,7 +859,7 @@ int main(int argc, char** argv)
                 cout << " heartbeat IPC: " << heartbeat_ipc << " cumulative IPC: " << cumulative_ipc; 
 
                 //also print this to std err so we can see the output
-                cerr << "IPC = " << cumulative_ipc; 
+                cerr << "IPC = " << cumulative_ipc << " ";
 
                 cout << " (Simulation time: " << elapsed_hour << " hr " << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
                 ooo_cpu[i].next_print_instruction += STAT_PRINTING_PERIOD;
