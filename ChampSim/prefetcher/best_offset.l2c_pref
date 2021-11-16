@@ -59,7 +59,7 @@ typedef long long addr_t;
 
 class RRTable {
   private:
-    uint32_t recent_request[2][RRSIZE]
+    uint32_t recent_request[2][RRSIZE];
 
   private:
     uint32_t get_left_hash(addr_t lineaddr)
@@ -96,14 +96,14 @@ class RRTable {
       recent_request[1][hash] = get_tag(lineaddr);
     }
 
-    uint32_t rr_hit(addr_t lineaddr)
+    uint32_t hit(addr_t lineaddr)
     {
       uint32_t left_hash = get_left_hash(lineaddr);
       uint32_t right_hash = get_right_hash(lineaddr);
       uint32_t tag = get_tag(lineaddr);
-      return (recent_request[0][i] == tag) || (recent_request[1][j] == tag);
+      return (recent_request[0][left_hash] == tag) || (recent_request[1][right_hash] == tag);
     }
-}
+};
 
 //######################################################################################
 //                               DELAY QUEUE (DQ)
@@ -135,7 +135,7 @@ class DelayQueue {
         return 0;
   
       //since we're using uint_64 let's ignore the case where our cycle count will roll over to 0
-      return current_core_cycle[0]; >= cycle_arr[head] + DELAY;
+      return current_core_cycle[0] >= (cycle_arr[head] + DELAY);
     }
 
     void pop_one(RRTable *rr_table)
@@ -181,7 +181,7 @@ class DelayQueue {
       while (ready())
         pop_one(rr_table);
     }
-}
+};
 
 
 //######################################################################################
@@ -219,7 +219,7 @@ class PrefetchThrottle {
       {
         // prefetch accuracy not too bad, or low bandwidth requirement
         // ==> maximum prefetch aggressiveness
-        pt.mshr_threshold = MSHR_THRESHOLD_MAX;
+        mshr_threshold = MSHR_THRESHOLD_MAX;
       }
       else if (llc_rate < BANDWIDTH)
       {
@@ -232,7 +232,7 @@ class PrefetchThrottle {
       else
       {
         // in-between situation: we set the MSHR threshold proportionally to the (inverse) LLC rate
-        mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (pt.llc_rate - BANDWIDTH) / BANDWIDTH;
+        mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (llc_rate - BANDWIDTH) / BANDWIDTH;
       }
     }
 
@@ -266,7 +266,7 @@ class PrefetchThrottle {
         }
       }
     }
-}
+};
 
 //######################################################################################
 //                               OFFSETS SCORES (OS)
@@ -338,7 +338,7 @@ class OffsetScore
 
       curr_idx = (curr_idx == NOFFSETS - 1) ? 0 : curr_idx + 1; // prepare to test the next offset
     }
-}
+};
 
 class BestOffsetPrefetcher
 {
@@ -358,7 +358,7 @@ class BestOffsetPrefetcher
       {
         // The prefetcher is currently turned off.
         // Just push the line address into the delay queue for best-offset learning.
-        dq.push(rr, lineaddr);
+        dq->push(rr, lineaddr);
         return 0; 
       }
 
@@ -368,7 +368,7 @@ class BestOffsetPrefetcher
 
       if (mshr_occupancy < pt.mshr_threshold) // prefetch into L2
       {    
-        dq.push(rr, lineaddr);
+        dq->push(rr, lineaddr);
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_L2;
         return 0;
@@ -462,7 +462,7 @@ class BestOffsetPrefetcher
 
       return metadata_in;
     }
-}
+};
 
 vector<BestOffsetPrefetcher> my_prefetchers;
 
