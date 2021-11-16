@@ -858,9 +858,6 @@ int main(int argc, char** argv)
                 cout << "Heartbeat CPU " << i << " instructions: " << ooo_cpu[i].num_retired << " cycles: " << current_core_cycle[i];
                 cout << " heartbeat IPC: " << heartbeat_ipc << " cumulative IPC: " << cumulative_ipc; 
 
-                //also print this to std err so we can see the output
-                cerr << "IPC = " << cumulative_ipc << " ";
-
                 cout << " (Simulation time: " << elapsed_hour << " hr " << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
                 ooo_cpu[i].next_print_instruction += STAT_PRINTING_PERIOD;
 
@@ -924,6 +921,9 @@ int main(int argc, char** argv)
              elapsed_hour = elapsed_minute / 60;
     elapsed_minute -= elapsed_hour*60;
     elapsed_second -= (elapsed_hour*3600 + elapsed_minute*60);
+
+    //also print this to std err so we can see the output
+    cerr << "IPC = " << cumulative_ipc << " ";
     
     cout << endl << "ChampSim completed all CPUs" << endl;
     if (NUM_CPUS > 1) {
