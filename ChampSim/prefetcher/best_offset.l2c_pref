@@ -211,6 +211,21 @@ class PrefetchThrottle {
       last_cycle = 0;
     }
 
+    int32_t get_prefetch_score()
+    {
+      return prefetch_score;
+    }
+
+    void set_prefetch_score(int32_t new_score)
+    {
+      prefetch_score = new_score;
+    }
+
+    uint32_t get_mshr_threshold()
+    {
+      return mshr_threshold;
+    }
+
     // The pt_update_mshr_threshold function is for adjusting the MSHR threshold
     // (a prefetch request is dropped when the MSHR occupancy exceeds the threshold)
     void update_mshr_threshold()
@@ -324,7 +339,7 @@ class OffsetScore
         if ((max_score == SCORE_MAX) || (round == ROUND_MAX)) //learning phase is finished, update prefetch offset
         {    
           prefetch_offset = (best_offset != 0) ? best_offset : DEFAULT_OFFSET;
-          pt->prefetch_score = max_score;
+          pt->set_prefetch_score(max_score);
           pt->update_mshr_threshold();
 
           if (max_score <= BAD_SCORE) //prefetch accuracy likely to be very low -> turn the prefetch off 
@@ -366,7 +381,7 @@ class BestOffsetPrefetcher
       if (!same_page) // crossing the page boundary, no prefetch request issued  
         return 0;
 
-      if (mshr_occupancy < pt.mshr_threshold) // prefetch into L2
+      if (mshr_occupancy < pt->get_mshr_threshold()) // prefetch into L2
       {    
         dq->push(rr, lineaddr);
         *do_prefetch_line = true;
@@ -402,7 +417,7 @@ class BestOffsetPrefetcher
     {
       addr_t lineaddr = addr >> LOGLINE;
 
-      bool l2_hit = w < NUM_WAY;
+      bool l2_hit = way < NUM_WAY;
       int32_t prefetched = 0;
 
       if (l2_hit)
@@ -412,7 +427,7 @@ class BestOffsetPrefetcher
         prefetch_bit[set][way] = 0;
       }
       else
-        os->pt_llc_access();
+        os->llc_access();
      
       dq->pop(rr);
 
@@ -444,9 +459,7 @@ class BestOffsetPrefetcher
       addr_t lineaddr = addr >> LOGLINE;
 
       // write the prefetch bit 
-      int s = get_set(addr);
-      int w = get_way(addr,s);
-      prefetch_bit[s][w] = prefetch;
+      prefetch_bit[set][way] = prefetch;
 
       // write the "right" bank of the RR table
       addr_t baselineaddr;
