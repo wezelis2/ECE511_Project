@@ -402,7 +402,7 @@ class BestOffsetPrefetcher
       {
         // The prefetcher is currently turned off.
         // Just push the line address into the delay queue for best-offset learning.
-        //dq->push(rr, lineaddr);
+        dq->push(rr, lineaddr);
         return 0; 
       }
 
@@ -415,7 +415,7 @@ class BestOffsetPrefetcher
 #ifdef VERBOSE
         //printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
 #endif
-        //dq->push(rr, lineaddr);
+        dq->push(rr, lineaddr);
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_L2;
         return 0;
@@ -515,10 +515,7 @@ class BestOffsetPrefetcher
         baselineaddr = lineaddr - os->get_prefetch_offset();
         bool same_page = ((((lineaddr) ^ (baselineaddr)) >> 6) == 0);
         if (same_page)
-        {
           rr->insert_right(baselineaddr);
-          dq->push(rr, baselineaddr);
-        }
       }
 
       return metadata_in;
