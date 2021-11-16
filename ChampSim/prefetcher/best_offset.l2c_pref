@@ -35,21 +35,11 @@ const int32_t OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,1
 #define BAD_SCORE 1 //Assume "knob_small_llc" from DPC2 is not set here (if set BAD_SCORE would be 10)
 #define BANDWIDTH ((knob_low_bandwidth)? 64 : 16)
 
-#define VERBOSE 0
-
-//######################################################################################
-//                            SOME MACROS & DEFINITIONS
-//######################################################################################
-
 #define LOGLINE 6
 
-#define SAMEPAGE(lineaddr1,lineaddr2) ((((lineaddr1) ^ (lineaddr2)) >> 6) == 0)
-
-#define INCREMENT(x,n) {x++; if (x==(n)) x=0;}
+#define VERBOSE 1
 
 #define TRUNCATE(x,nbits) (((x) & ((1<<(nbits))-1)))
-
-#define DEBUG_OUT(str) {if (VERBOSE) printf(str);}
 
 typedef long long addr_t;
 
@@ -82,6 +72,10 @@ class RRTable {
     {
       for (int i = 0; i < RRSIZE; i++)
         recent_request[0][i] = recent_request[1][i] = 0;
+
+#ifdef VERBOSE
+      printf("INIT BEST RECENT REQUEST TABLE MODULE\n");
+#endif
     }
 
     void insert_left(addr_t lineaddr)
@@ -158,6 +152,9 @@ class DelayQueue {
         valid_arr[i] = false;
       }
       head = tail = 0;
+#ifdef VERBOSE
+      printf("INIT DELAY QUEUE MODULE\n");
+#endif
     }
 
     //push one new address onto the queue
@@ -209,6 +206,9 @@ class PrefetchThrottle {
       llc_rate = 0;
       llc_rate_gauge = GAUGE_MAX/2;
       last_cycle = 0;
+#ifdef VERBOSE
+      printf("INIT PREFETCH THROTTLE MODULE\n");
+#endif
     }
 
     int32_t get_prefetch_score()
@@ -308,6 +308,9 @@ class OffsetScore
     OffsetScore()
     {
       reset();
+#ifdef VERBOSE
+      printf("INIT OFFSET SCORE MODULE\n");
+#endif
     }
 
     int32_t get_prefetch_offset()
@@ -337,13 +340,26 @@ class OffsetScore
       {
         round++;
         if ((max_score == SCORE_MAX) || (round == ROUND_MAX)) //learning phase is finished, update prefetch offset
-        {    
+        { 
+#ifdef VERBOSE
+          int32_t old_offset = prefetch_offset;
+#endif  
+
           prefetch_offset = (best_offset != 0) ? best_offset : DEFAULT_OFFSET;
+
+#ifdef VERBOSE
+          printf("OFFSET CHANGED FROM %d TO %d\n", old_offset, prefetch_offset);
+#endif
           pt->set_prefetch_score(max_score);
           pt->update_mshr_threshold();
 
           if (max_score <= BAD_SCORE) //prefetch accuracy likely to be very low -> turn the prefetch off 
+          {
             prefetch_offset = 0;
+#ifdef VERBOSE
+            printf("PREFETCH TURNED OFF DUE TO BAD SCORE: %n", max_score);
+#endif
+          }
 
           // new learning phase starts
           reset();
@@ -411,6 +427,9 @@ class BestOffsetPrefetcher
       for (int32_t s = 0; s < L2C_SET; s++)
         for (int32_t w = 0; w < L2C_WAY; w++)
           prefetch_bit[s][w] = 0;
+#ifdef VERBOSE
+      printf("INIT BEST OFFSET PREFETCHER\n");
+#endif
     }
 
     int32_t get_prefetch_offset()
