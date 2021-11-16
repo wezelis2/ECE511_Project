@@ -301,13 +301,13 @@ class OffsetScore
       for (int i = 0; i < NOFFSETS; i++)
         score[i] = 0;
       max_score = best_offset = round = curr_idx = 0;
-      prefetch_offset = DEFAULT_OFFSET;
     }
 
   public:
     OffsetScore()
     {
       reset();
+      prefetch_offset = DEFAULT_OFFSET;
 #ifdef VERBOSE
       printf("INIT OFFSET SCORE MODULE\n");
 #endif
