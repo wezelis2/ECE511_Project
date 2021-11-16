@@ -248,36 +248,20 @@ module best_offset_prefetcher #(
 	endtask
 
 	task prefetcher_operate(logic [WIDTH - 1:0] address, logic hit);	// not done implementing
-		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
-		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
-		logic 								prefetched 		= 0;
-		logic 								prefetch_issued	= prefetch_offset != 0 && lo_ready_i;
-
-		if (hit) begin 
-			prefetched 										<= prefetched_table[set][way];
-			prefetched_table[set][way] 						<= 0;
+		if (hit) begin
+			prefetched_table[get_up_set(address)][get_up_way(address)] <= 0;
 		end
 
-		// dq_pop_rr_left_insert();
-
-		if (~hit | prefetched_table[set][way]) begin 
+		if (~hit | (hit & prefetched_table[get_up_set(address)][get_up_way(address)])) begin 
 			learn_best_offset(address);
 			issue_prefetch(address, prefetch_offset);
-			// if (prefetch_issued)
+			// if (prefetch_offset != 0 && lo_ready_i)
 				// something goes here?
 		end 
 	endtask
 
 	task fill_cache(logic [WIDTH - 1:0] address, logic prefetch_bit);
-		logic 	[$clog2(UP_NUM_SET)  - 1:0] set 			= get_up_set(address);
-		logic 	[$clog2(UP_NUM_ASSO) - 1:0] way 			= get_up_way(address);
-
-		prefetched_table[set][way] 							<= prefetch_bit;
-
-		// if (prefetch_bit || prefetch_offset == 0) begin 
-		// 	rr_table_insert((address >> LOGLINE) - prefetch_offset, RIGHT);
-		// end 
-
+		prefetched_table[get_up_set(address)][get_up_way(address)] 	<= prefetch_bit;
 	endtask
 
 	//######################################################################################
