@@ -357,7 +357,7 @@ class OffsetScore
           {
             prefetch_offset = 0;
 #ifdef VERBOSE
-            printf("PREFETCH TURNED OFF DUE TO BAD SCORE: %n", max_score);
+            printf("PREFETCH TURNED OFF DUE TO BAD SCORE: %d\n", max_score);
 #endif
           }
 
