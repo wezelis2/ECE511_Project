@@ -257,7 +257,7 @@ class PrefetchThrottle {
 #ifdef VERBOSE
         uint32_t new_val = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (llc_rate - BANDWIDTH) / BANDWIDTH;
         if (mshr_threshold != new_val)
-          printf("CHANGING MSHR THRESHOLD FROM %d TO %d\n", mshr_threshold, MSHR_THRESHOLD_MIN);
+          printf("CHANGING MSHR THRESHOLD FROM %d TO %d\n", mshr_threshold, new_val);
 #endif
         // in-between situation: we set the MSHR threshold proportionally to the (inverse) LLC rate
         mshr_threshold = MSHR_THRESHOLD_MIN + (MSHR_THRESHOLD_MAX-MSHR_THRESHOLD_MIN) * (double) (llc_rate - BANDWIDTH) / BANDWIDTH;
@@ -412,6 +412,9 @@ class BestOffsetPrefetcher
 
       if (mshr_occupancy < pt->get_mshr_threshold()) // prefetch into L2
       {    
+#ifdef VERBOSE
+        printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
+#endif
         dq->push(rr, lineaddr);
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_L2;
@@ -422,10 +425,17 @@ class BestOffsetPrefetcher
       // try to prefetch into LLC if prefetch accuracy not too bad
       if (pt->get_prefetch_score() > LOW_SCORE)
       {
+#ifdef VERBOSE
+        printf("PREFETCHING INTO L2 w/ PREFETCH SCORE %d\n", pt->get_prefetch_score());
+#endif
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_LLC;
         return 0;
       }
+
+#ifdef VERBOSE
+        printf("NO PREFETCH REQUEST BECAUSE PREFETCH SCORE %d IS NOT GREATER THAN %d\n", pt->get_prefetch_score(), LOW_SCORE);
+#endif
 
       return 0;
     }
