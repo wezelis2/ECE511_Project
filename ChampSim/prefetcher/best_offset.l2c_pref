@@ -413,7 +413,7 @@ class BestOffsetPrefetcher
       if (mshr_occupancy < pt->get_mshr_threshold()) // prefetch into L2
       {    
 #ifdef VERBOSE
-        printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
+        //printf("PREFETCHING INTO L2 w/ MSHR OCCUPANCY %d\n", mshr_occupancy);
 #endif
         dq->push(rr, lineaddr);
         *do_prefetch_line = true;
@@ -426,7 +426,7 @@ class BestOffsetPrefetcher
       if (pt->get_prefetch_score() > LOW_SCORE)
       {
 #ifdef VERBOSE
-        printf("PREFETCHING INTO L2 w/ PREFETCH SCORE %d\n", pt->get_prefetch_score());
+        printf("PREFETCHING INTO L2 w/ PREFETCH SCORE %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), mshr_occupancy);
 #endif
         *do_prefetch_line = true;
         *prefetch_fill_level = FILL_LLC;
@@ -434,7 +434,7 @@ class BestOffsetPrefetcher
       }
 
 #ifdef VERBOSE
-        printf("NO PREFETCH REQUEST BECAUSE PREFETCH SCORE %d IS NOT GREATER THAN %d\n", pt->get_prefetch_score(), LOW_SCORE);
+        printf("NO PREFETCH REQUEST BECAUSE PREFETCH SCORE %d IS NOT GREATER THAN %d (MSHR OCC = %d)\n", pt->get_prefetch_score(), LOW_SCORE, mshr_occupancy);
 #endif
 
       return 0;
