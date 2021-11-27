@@ -49,7 +49,7 @@ module best_offset_prefetcher #(
 	logic 	signed 	[$clog2(`OFFSET_MAX) - 1:0] 	prefetch_offset;
 	logic 			[$clog2(SCORE_MAX) 	- 1:0]	 	prefetch_score;
 	// logic 		 	[RRTAG - 1:0]					rr_table 			[1:0] [1<<RRINDEX - 1:0];
-	logic 											prefetched_table 	[UP_NUM_SET] [UP_NUM_ASSO];
+	logic 											prefetched_table 	[UP_NUM_SET];
 	logic 			[$clog2(SCORE_MAX) - 1:0] 		score 				[`NOFFSETS - 1:0];
 	logic 			[$clog2(SCORE_MAX) - 1:0] 		curr_max_score, next_max_score;
 	logic 			[$clog2(`NOFFSETS)  - 1:0] 		best_offset_idx, next_best_offset_idx;
@@ -154,9 +154,7 @@ module best_offset_prefetcher #(
 
 	task reset_prefetched_table();
 		for(int i = 0; i < UP_NUM_SET; i++) begin 
-			for(int j = 0; j < UP_NUM_ASSO; j++) begin 
-				prefetched_table [i][j] <= '0;
-			end 
+				prefetched_table [i] <= '0; 
 		end 
 	endtask
 
@@ -188,12 +186,6 @@ module best_offset_prefetcher #(
 				write_left	= 0;
 				data_right	= data;
 			end 
-
-			default: begin 
-				write_right	= 0;
-				write_left	= 0;
-				data_right	= '0;
-			end 
 		endcase
 	endfunction
 
@@ -223,7 +215,7 @@ module best_offset_prefetcher #(
 			best_offset_idx 		<= next_best_offset_idx;
 		end 
 
-		if (curr_offset_idx == (`NOFFSETS - 1)) begin
+		if (curr_offset_idx == unsigned'(`NOFFSETS - 1)) begin
 			curr_round 				<= curr_round + 1;
 
 			if(next_max_score == SCORE_MAX || (curr_round + 1) == ROUND_MAX) begin 
@@ -237,7 +229,7 @@ module best_offset_prefetcher #(
 			end 
 		end 
 
-		curr_offset_idx 			<= curr_offset_idx == `NOFFSETS - 1 ? 0 : curr_offset_idx + 1;
+		curr_offset_idx 			<= curr_offset_idx == unsigned'(`NOFFSETS - 1) ? 0 : curr_offset_idx + 1;
 	endtask
 
 	task issue_prefetch(logic [TAG_WIDTH - 1:0] address, logic [$clog2(`OFFSET_MAX) - 1:0] offset);
@@ -250,10 +242,10 @@ module best_offset_prefetcher #(
 
 	task prefetcher_operate(logic [TAG_WIDTH - 1:0] address, logic hit);	// not done implementing
 		if (hit) begin
-			prefetched_table[get_up_set(address)][get_up_way(address)] <= 0;
+			prefetched_table[get_up_set(address)] <= 0;
 		end
 
-		if (~hit | (hit & prefetched_table[get_up_set(address)][get_up_way(address)])) begin 
+		if (~hit | (hit & prefetched_table[get_up_set(address)])) begin 
 			learn_best_offset(address);
 			issue_prefetch(address, prefetch_offset);
 			// if (prefetch_offset != 0 && lo_ready_i)
@@ -262,7 +254,7 @@ module best_offset_prefetcher #(
 	endtask
 
 	task fill_cache(logic [WIDTH - 1:0] address, logic prefetch_bit);
-		prefetched_table[get_up_set(address)][get_up_way(address)] 	<= prefetch_bit;
+		prefetched_table[get_up_set(address)] 	<= prefetch_bit;
 	endtask
 
 	//######################################################################################
@@ -270,7 +262,7 @@ module best_offset_prefetcher #(
 	//######################################################################################
 
 	function logic [$clog2(UP_NUM_SET) - 1:0] get_up_set(logic [TAG_WIDTH - 1:0] address);
-		return (address >> $clog2(LINE_SIZE)) & ((1 << $clog2(UP_NUM_SET)) - 1);
+		return (address >> $clog2(LINE_SIZE)) & unsigned'((1 << $clog2(UP_NUM_SET)) - 1);
 	endfunction
 
 	function logic [$clog2(UP_NUM_ASSO) - 1:0] get_up_way(logic [TAG_WIDTH - 1:0] address);
@@ -303,11 +295,17 @@ module best_offset_prefetcher #(
 	end
 
 	always_comb begin 
-		set_defaults();
-		rr_check_hit((up_address_i - signed'(OFFSET[curr_offset_idx])) >> (WIDTH - TAG_WID), up_valid_i);
+		if (OFFSET[curr_offset_idx] < 0)
+			rr_check_hit(up_address_i + unsigned'(~OFFSET[curr_offset_idx] + 1), up_valid_i);
+		else
+			rr_check_hit(up_address_i - unsigned'(OFFSET[curr_offset_idx]), up_valid_i);
+		// rr_check_hit(up_address_i + (~(signed'(OFFSET[curr_offset_idx])) + 1), up_valid_i);
 		dq_pop_rr_left_insert();
 		if (up_prefetched_i || prefetch_offset == 0) begin 
-			rr_table_insert((up_address_i - prefetch_offset) >> (WIDTH - TAG_WID), RIGHT);
+			if (prefetch_offset < 0)
+				rr_table_insert(up_address_i + unsigned'(~prefetch_offset + 1), RIGHT);
+			else
+				rr_table_insert(up_address_i - unsigned'(prefetch_offset), RIGHT);
 		end 
 	end
 
