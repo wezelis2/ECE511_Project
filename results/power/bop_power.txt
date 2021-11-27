@@ -1,0 +1,49 @@
+ 
+****************************************
+Report : power
+        -analysis_effort low
+Design : best_offset_prefetcher_1
+Version: R-2020.09-SP4
+Date   : Tue Nov 16 01:34:56 2021
+****************************************
+
+
+Library(s) Used:
+
+    gscl45nm (File: /home/ericd3/ece511/ECE511_Project/rtl/gscl45nm.db)
+
+
+Operating Conditions: typical   Library: gscl45nm
+Wire Load Model Mode: top
+
+
+Global Operating Voltage = 1.1  
+Power-specific unit information :
+    Voltage Units = 1V
+    Capacitance Units = 1.000000pf
+    Time Units = 1ns
+    Dynamic Power Units = 1mW    (derived from V,C,T units)
+    Leakage Power Units = 1nW
+
+
+  Cell Internal Power  =  43.4448 mW   (95%)
+  Net Switching Power  =   2.1783 mW    (5%)
+                         ---------
+Total Dynamic Power    =  45.6231 mW  (100%)
+
+Cell Leakage Power     = 607.3827 uW
+
+
+                 Internal         Switching           Leakage            Total
+Power Group      Power            Power               Power              Power   (   %    )  Attrs
+--------------------------------------------------------------------------------------------------
+io_pad             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
+clock_network      0.0000            0.0000            0.0000            0.0000  (   0.00%)
+register          41.5527        3.5790e-02        3.2409e+05           41.9123  (  90.65%)
+sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
+combinational      1.8947            2.1424        2.8329e+05            4.3209  (   9.35%)
+--------------------------------------------------------------------------------------------------
+Total             43.4474 mW         2.1782 mW     6.0738e+05 nW        46.2332 mW
+1

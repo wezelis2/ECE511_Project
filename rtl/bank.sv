@@ -31,7 +31,7 @@ module bank #(
 	endtask
 
 	function logic [WIDTH - 1:0] TRUNCATE(logic	[WIDTH - 1:0] x, int nbits);
-		return x & ((1 << nbits) - 1);
+		return x & unsigned'((1 << nbits) - 1);
 	endfunction
 
 	function logic [TAG_WIDTH - 1:0] get_tag(logic [WIDTH - 1:0] data);
@@ -42,7 +42,7 @@ module bank #(
 		return TRUNCATE(data ^ (data >> (INDEX_WIDTH << SIDE)), INDEX_WIDTH);
 	endfunction
 
-	assign hit 		= read_i & bank_data[get_index(read_address_i)] == get_tag(read_address_i);
+	assign hit_o 	= read_i & bank_data[get_index(read_address_i)] == get_tag(read_address_i);
 	assign data_o 	= bank_data[get_index(read_address_i)];
 	assign valid_o 	= read_i;
 

@@ -7,12 +7,12 @@ module prefetcher #(parameter limit = 8)
 	input 	logic 			i_pmem_read_cla,
  	input 	logic 			i_pmem_write_cla,
 	input 	logic 			pref_pmem_resp_cla,
-	input   logic   [31:0]  lsq_pmem_address_cla,
+	input   logic   [63:0]  lsq_pmem_address_cla,
 	input 	logic 	[255:0]	pref_pmem_rdata_256_cla,
 	input   logic 			arbiter_idle,
 	output 	logic 			pref_pmem_read_cla,
 	output 	logic 			pref_pmem_write_cla,
-	output 	logic 	[31:0]	pref_pmem_address_cla,
+	output 	logic 	[63:0]	pref_pmem_address_cla,
 	output 	logic 	[255:0]	pref_pmem_wdata_256_cla
 );
 
@@ -25,7 +25,7 @@ module prefetcher #(parameter limit = 8)
 	15:632,475
 */
 
-	logic	[31:0]	pref_addr_in;
+	logic	[63:0]	pref_addr_in;
 	logic			pref_addr_load;
 	int  			counter;
 
@@ -72,7 +72,7 @@ module prefetcher #(parameter limit = 8)
 		pref_pmem_write_cla		= 1'b0;
 		pref_pmem_wdata_256_cla	= 256'b0;
 		pref_addr_load			= 1'b0;
-		pref_addr_in			= 32'b0;
+		pref_addr_in			= 64'b0;
 	endfunction
 
 	always_comb begin : state_actions
@@ -81,7 +81,7 @@ module prefetcher #(parameter limit = 8)
 			idle: begin
 				if (lsq_pmem_read_cla | lsq_pmem_write_cla) begin
 					pref_addr_load	= 1'b1;
-					pref_addr_in	= lsq_pmem_address_cla + 32'h20;
+					pref_addr_in	= lsq_pmem_address_cla + 64'h20;
 				end
 			end
 
@@ -90,7 +90,7 @@ module prefetcher #(parameter limit = 8)
 			end
 
 			inc_addr: begin
-				pref_addr_in	= pref_pmem_address_cla + 32'h20;
+				pref_addr_in	= pref_pmem_address_cla + 64'h20;
 				pref_addr_load	= 1'b1;
 			end
 			
@@ -114,3 +114,37 @@ module prefetcher #(parameter limit = 8)
 			counter 	<= counter + 1;
 	end
 endmodule : prefetcher
+
+module register #(parameter width = 64)
+(
+	input clk,
+	input rst,
+	input load,
+	input [width-1:0] in,
+	output logic [width-1:0] out
+);
+
+	logic [width-1:0] data = 1'b0;
+
+	always_ff @(posedge clk)
+	begin
+		if (rst)
+		begin
+			data <= '0;
+		end
+		else if (load)
+		begin
+			data <= in;
+		end
+		else
+		begin
+			data <= data;
+		end
+	end
+
+	always_comb
+	begin
+		out = data;
+	end
+
+endmodule : register

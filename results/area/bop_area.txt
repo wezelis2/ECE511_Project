@@ -1,0 +1,30 @@
+ 
+****************************************
+Report : area
+Design : best_offset_prefetcher_1
+Version: R-2020.09-SP4
+Date   : Tue Nov 16 01:34:47 2021
+****************************************
+
+Library(s) Used:
+
+    gscl45nm (File: /home/ericd3/ece511/ECE511_Project/rtl/gscl45nm.db)
+
+Number of ports:                         2097
+Number of nets:                         40161
+Number of cells:                        38563
+Number of combinational cells:          32638
+Number of sequential cells:              5895
+Number of macros/black boxes:               0
+Number of buf/inv:                       9269
+Number of references:                      31
+
+Combinational area:              80785.769804
+Buf/Inv area:                    14362.456948
+Noncombinational area:           47030.898457
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (No wire load specified)
+
+Total cell area:                127816.668261
+Total area:                 undefined
+1
