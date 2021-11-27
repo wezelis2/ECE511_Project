@@ -304,10 +304,10 @@ module best_offset_prefetcher #(
 
 	always_comb begin 
 		set_defaults();
-		rr_check_hit(up_address_i - signed'(OFFSET[curr_offset_idx]), up_valid_i);
+		rr_check_hit((up_address_i - signed'(OFFSET[curr_offset_idx])) >> (WIDTH - TAG_WID), up_valid_i);
 		dq_pop_rr_left_insert();
 		if (up_prefetched_i || prefetch_offset == 0) begin 
-			rr_table_insert(up_address_i - prefetch_offset, RIGHT);
+			rr_table_insert((up_address_i - prefetch_offset) >> (WIDTH - TAG_WID), RIGHT);
 		end 
 	end
 
