@@ -3,6 +3,7 @@
 
 module best_offset_prefetcher #(
 	parameter 	WIDTH 			= 64,
+	parameter 	TAG_WIDTH 		= 12,
 	parameter 	UP_NUM_SET 		= 8,
 	parameter 	UP_NUM_ASSO 	= 0
 ) (
@@ -59,20 +60,20 @@ module best_offset_prefetcher #(
 	// recent requests table signals
 	logic 											read_left, 			read_right;
 	logic 											write_left, 		write_right;
-	logic 			[WIDTH - 1:0] 					data_left, 			data_right;
+	logic 			[TAG_WIDTH - 1:0] 				data_left, 			data_right;
 	logic 											hit_left, 			hit_right;
 	logic 											data_left_out, 		data_right_out;
 	logic 											valid_left, 		valid_right;
 	logic 											rr_hit;
-	logic 			[WIDTH - 1:0]					read_address_left, 	read_address_right;		
+	logic 			[TAG_WIDTH - 1:0]				read_address_left, 	read_address_right;		
 
 	// delay queue signals
 	logic 											delay_queue_enq;
-	logic 			[WIDTH - 1:0]					delay_queue_in;
+	logic 			[TAG_WIDTH - 1:0]				delay_queue_in;
 	logic 											delay_queue_empty;
 	logic 											delay_queue_full;
 	logic 											delay_queue_ready;
-	logic 			[WIDTH - 1:0]					delay_queue_out;
+	logic 			[TAG_WIDTH - 1:0]				delay_queue_out;
 
 	//######################################################################################
 	//										LOGIC ASSIGNMENTS
@@ -95,7 +96,7 @@ module best_offset_prefetcher #(
 	//######################################################################################
 	//										MODULE DECLARATION
 	//######################################################################################
-	bank #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, LEFT) rr_table_left (
+	bank #(TAG_WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, LEFT) rr_table_left (
 		.read_i(read_left),
 		.write_i(write_left),
 		.data_i(data_left),
@@ -106,7 +107,7 @@ module best_offset_prefetcher #(
 		.*
 	);
 
-	bank #(WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, RIGHT) rr_table_right (
+	bank #(TAG_WIDTH, RRTAG, RRINDEX, 1 << RRINDEX, RIGHT) rr_table_right (
 		.read_i(read_right),
 		.write_i(write_right),
 		.data_i(data_right),
@@ -117,7 +118,7 @@ module best_offset_prefetcher #(
 		.*
 	);
 
-	circular_queue #(WIDTH, DELAY) delay_queue (
+	circular_queue #(TAG_WIDTH, DELAY) delay_queue (
 		.enq(delay_queue_enq),
 		.deq(1'b1),
 		.in(delay_queue_in),
@@ -154,7 +155,7 @@ module best_offset_prefetcher #(
 	task reset_prefetched_table();
 		for(int i = 0; i < UP_NUM_SET; i++) begin 
 			for(int j = 0; j < UP_NUM_ASSO; j++) begin 
-				prefetched_table <= '0;
+				prefetched_table [i][j] <= '0;
 			end 
 		end 
 	endtask
@@ -174,7 +175,7 @@ module best_offset_prefetcher #(
 	//									RR AND DQ TASKS
 	//######################################################################################
 
-	function void rr_table_insert(logic [WIDTH - 1:0] data, rr_side side);
+	function void rr_table_insert(logic [TAG_WIDTH - 1:0] data, rr_side side);
 		unique case(side)
 			LEFT: 	begin 
 				write_right	= 0;
@@ -196,7 +197,7 @@ module best_offset_prefetcher #(
 		endcase
 	endfunction
 
-	task delay_queue_push(logic [WIDTH - 1:0] data);
+	task delay_queue_push(logic [TAG_WIDTH - 1:0] data);
 		delay_queue_enq 	<= 1'b1;
 		delay_queue_in 		<= data;
 	endtask
@@ -215,7 +216,7 @@ module best_offset_prefetcher #(
 	//									MISC TASKS
 	//######################################################################################
 
-	task learn_best_offset(logic [WIDTH - 1:0] address);
+	task learn_best_offset(logic [TAG_WIDTH - 1:0] address);
 		if (rr_hit) begin 
 			score[curr_offset_idx] 	<= score[curr_offset_idx] + 1 == SCORE_MAX ? SCORE_MAX : score[curr_offset_idx] + 1;
 			curr_max_score 			<= next_max_score;
@@ -239,7 +240,7 @@ module best_offset_prefetcher #(
 		curr_offset_idx 			<= curr_offset_idx == `NOFFSETS - 1 ? 0 : curr_offset_idx + 1;
 	endtask
 
-	task issue_prefetch(logic [WIDTH - 1:0] address, logic [$clog2(`OFFSET_MAX) - 1:0] offset);
+	task issue_prefetch(logic [TAG_WIDTH - 1:0] address, logic [$clog2(`OFFSET_MAX) - 1:0] offset);
 		delay_queue_push(address);
 		if(offset != 0 && lo_ready_i) begin 
 			lo_prefetch_address_o	<= address + offset;
@@ -247,7 +248,7 @@ module best_offset_prefetcher #(
 		end 
 	endtask
 
-	task prefetcher_operate(logic [WIDTH - 1:0] address, logic hit);	// not done implementing
+	task prefetcher_operate(logic [TAG_WIDTH - 1:0] address, logic hit);	// not done implementing
 		if (hit) begin
 			prefetched_table[get_up_set(address)][get_up_way(address)] <= 0;
 		end
@@ -268,15 +269,15 @@ module best_offset_prefetcher #(
 	//									FUNCTIONS
 	//######################################################################################
 
-	function logic [$clog2(UP_NUM_SET) - 1:0] get_up_set(logic [WIDTH - 1:0] address);
+	function logic [$clog2(UP_NUM_SET) - 1:0] get_up_set(logic [TAG_WIDTH - 1:0] address);
 		return (address >> $clog2(LINE_SIZE)) & ((1 << $clog2(UP_NUM_SET)) - 1);
 	endfunction
 
-	function logic [$clog2(UP_NUM_ASSO) - 1:0] get_up_way(logic [WIDTH - 1:0] address);
+	function logic [$clog2(UP_NUM_ASSO) - 1:0] get_up_way(logic [TAG_WIDTH - 1:0] address);
 		return 0;
 	endfunction
 
-	function void rr_check_hit (logic [WIDTH - 1:0] address, logic valid);
+	function void rr_check_hit (logic [TAG_WIDTH - 1:0] address, logic valid);
 		read_left 			= valid;
 		read_right			= valid;
 		read_address_left	= address;
@@ -294,9 +295,9 @@ module best_offset_prefetcher #(
 		if (rst) begin
 			reset();
 		end else begin
-			prefetcher_operate(up_address_i, ~up_miss_i & up_valid_i);
+			prefetcher_operate(up_address_i[WIDTH - 1 -: TAG_WIDTH], ~up_miss_i & up_valid_i);
 			if (~up_miss_i & up_valid_i) begin 
-				fill_cache(up_address_i, up_prefetched_i & up_valid_i);
+				fill_cache(up_address_i[WIDTH - 1 -: TAG_WIDTH], up_prefetched_i & up_valid_i);
 			end 
 		end
 	end
