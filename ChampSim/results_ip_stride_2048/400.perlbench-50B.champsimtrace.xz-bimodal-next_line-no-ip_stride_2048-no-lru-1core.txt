@@ -1,0 +1,106 @@
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+
+Warmup Instructions: 50000000
+Simulation Instructions: 250000000
+Number of CPUs: 1
+LLC sets: 2048
+LLC ways: 16
+Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 3200 MT/s
+
+CPU 0 runs /home/wezelis2/ECE511_Project/ChampSim/dpc3_traces/400.perlbench-50B.champsimtrace.xz
+CPU 0 Bimodal branch predictor
+CPU 0 L1I next line prefetcher
+CPU 0 L2C IP-based stride prefetcher
+Heartbeat CPU 0 instructions: 10000002 cycles: 4648587 heartbeat IPC: 2.15119 cumulative IPC: 2.15119 (Simulation time: 0 hr 0 min 25 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 8871783 heartbeat IPC: 2.36787 cumulative IPC: 2.25434 (Simulation time: 0 hr 0 min 49 sec) 
+Heartbeat CPU 0 instructions: 30000003 cycles: 12863370 heartbeat IPC: 2.50527 cumulative IPC: 2.3322 (Simulation time: 0 hr 1 min 12 sec) 
+Heartbeat CPU 0 instructions: 40000002 cycles: 16778493 heartbeat IPC: 2.5542 cumulative IPC: 2.384 (Simulation time: 0 hr 1 min 36 sec) 
+Heartbeat CPU 0 instructions: 50000003 cycles: 20966109 heartbeat IPC: 2.38799 cumulative IPC: 2.3848 (Simulation time: 0 hr 2 min 0 sec) 
+
+Warmup complete CPU 0 instructions: 50000003 cycles: 20966109 (Simulation time: 0 hr 2 min 0 sec) 
+
+Heartbeat CPU 0 instructions: 60000002 cycles: 32462609 heartbeat IPC: 0.86983 cumulative IPC: 0.86983 (Simulation time: 0 hr 2 min 20 sec) 
+Heartbeat CPU 0 instructions: 70000002 cycles: 43370354 heartbeat IPC: 0.91678 cumulative IPC: 0.892688 (Simulation time: 0 hr 2 min 37 sec) 
+Heartbeat CPU 0 instructions: 80000002 cycles: 55091828 heartbeat IPC: 0.853135 cumulative IPC: 0.879102 (Simulation time: 0 hr 2 min 54 sec) 
+Heartbeat CPU 0 instructions: 90000000 cycles: 66048633 heartbeat IPC: 0.912675 cumulative IPC: 0.887262 (Simulation time: 0 hr 3 min 14 sec) 
+Heartbeat CPU 0 instructions: 100000000 cycles: 77367077 heartbeat IPC: 0.883514 cumulative IPC: 0.88651 (Simulation time: 0 hr 3 min 32 sec) 
+Heartbeat CPU 0 instructions: 110000000 cycles: 88175086 heartbeat IPC: 0.92524 cumulative IPC: 0.892738 (Simulation time: 0 hr 3 min 49 sec) 
+Heartbeat CPU 0 instructions: 120000000 cycles: 99898690 heartbeat IPC: 0.85298 cumulative IPC: 0.886833 (Simulation time: 0 hr 4 min 7 sec) 
+Heartbeat CPU 0 instructions: 130000003 cycles: 110837316 heartbeat IPC: 0.914192 cumulative IPC: 0.890163 (Simulation time: 0 hr 4 min 25 sec) 
+Heartbeat CPU 0 instructions: 140000002 cycles: 121803315 heartbeat IPC: 0.91191 cumulative IPC: 0.892528 (Simulation time: 0 hr 4 min 44 sec) 
+Heartbeat CPU 0 instructions: 150000000 cycles: 132370605 heartbeat IPC: 0.946316 cumulative IPC: 0.89763 (Simulation time: 0 hr 5 min 1 sec) 
+Heartbeat CPU 0 instructions: 160000001 cycles: 143234103 heartbeat IPC: 0.920514 cumulative IPC: 0.899663 (Simulation time: 0 hr 5 min 20 sec) 
+Heartbeat CPU 0 instructions: 170000002 cycles: 155128269 heartbeat IPC: 0.840748 cumulative IPC: 0.89444 (Simulation time: 0 hr 5 min 38 sec) 
+Heartbeat CPU 0 instructions: 180000001 cycles: 168439728 heartbeat IPC: 0.751232 cumulative IPC: 0.881514 (Simulation time: 0 hr 5 min 56 sec) 
+Heartbeat CPU 0 instructions: 190000000 cycles: 180129231 heartbeat IPC: 0.855468 cumulative IPC: 0.879601 (Simulation time: 0 hr 6 min 16 sec) 
+Heartbeat CPU 0 instructions: 200000001 cycles: 191571713 heartbeat IPC: 0.873936 cumulative IPC: 0.879221 (Simulation time: 0 hr 6 min 34 sec) 
+Heartbeat CPU 0 instructions: 210000000 cycles: 203004293 heartbeat IPC: 0.874693 cumulative IPC: 0.878936 (Simulation time: 0 hr 6 min 53 sec) 
+Heartbeat CPU 0 instructions: 220000000 cycles: 214402592 heartbeat IPC: 0.877324 cumulative IPC: 0.878841 (Simulation time: 0 hr 7 min 10 sec) 
+Heartbeat CPU 0 instructions: 230000000 cycles: 226209947 heartbeat IPC: 0.84693 cumulative IPC: 0.877006 (Simulation time: 0 hr 7 min 27 sec) 
+Heartbeat CPU 0 instructions: 240000002 cycles: 237463200 heartbeat IPC: 0.888632 cumulative IPC: 0.87761 (Simulation time: 0 hr 7 min 45 sec) 
+Heartbeat CPU 0 instructions: 250000000 cycles: 248066221 heartbeat IPC: 0.943127 cumulative IPC: 0.880669 (Simulation time: 0 hr 8 min 0 sec) 
+Heartbeat CPU 0 instructions: 260000000 cycles: 259594994 heartbeat IPC: 0.867395 cumulative IPC: 0.880028 (Simulation time: 0 hr 8 min 18 sec) 
+Heartbeat CPU 0 instructions: 270000002 cycles: 272515020 heartbeat IPC: 0.773992 cumulative IPC: 0.874581 (Simulation time: 0 hr 8 min 37 sec) 
+Heartbeat CPU 0 instructions: 280000000 cycles: 289330987 heartbeat IPC: 0.594673 cumulative IPC: 0.857042 (Simulation time: 0 hr 8 min 58 sec) 
+Heartbeat CPU 0 instructions: 290000001 cycles: 306042507 heartbeat IPC: 0.59839 cumulative IPC: 0.84188 (Simulation time: 0 hr 9 min 20 sec) 
+Heartbeat CPU 0 instructions: 300000002 cycles: 322304439 heartbeat IPC: 0.614933 cumulative IPC: 0.829632 (Simulation time: 0 hr 9 min 42 sec) 
+Finished CPU 0 instructions: 250000000 cycles: 301338335 cumulative IPC: 0.829632 (Simulation time: 0 hr 9 min 42 sec) 
+
+ChampSim completed all CPUs
+
+Region of Interest Statistics
+
+CPU 0 cumulative IPC: 0.829632 instructions: 250000000 cycles: 301338335
+L1D TOTAL     ACCESS:   75779330  HIT:   75463073  MISS:     316257
+L1D LOAD      ACCESS:   42559033  HIT:   42269013  MISS:     290020
+L1D RFO       ACCESS:   33220297  HIT:   33194060  MISS:      26237
+L1D PREFETCH  ACCESS:          0  HIT:          0  MISS:          0
+L1D WRITEBACK ACCESS:          0  HIT:          0  MISS:          0
+L1D PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
+L1D AVERAGE MISS LATENCY: 49.6747 cycles
+L1I TOTAL     ACCESS:   47325817  HIT:   46889009  MISS:     436808
+L1I LOAD      ACCESS:   47113420  HIT:   46831816  MISS:     281604
+L1I RFO       ACCESS:          0  HIT:          0  MISS:          0
+L1I PREFETCH  ACCESS:     212397  HIT:      57193  MISS:     155204
+L1I WRITEBACK ACCESS:          0  HIT:          0  MISS:          0
+L1I PREFETCH  REQUESTED:     325498  ISSUED:     325498  USEFUL:      76130  USELESS:      79074
+L1I AVERAGE MISS LATENCY: 15.8476 cycles
+L2C TOTAL     ACCESS:     859298  HIT:     762447  MISS:      96851
+L2C LOAD      ACCESS:     558416  HIT:     482536  MISS:      75880
+L2C RFO       ACCESS:      26235  HIT:      18172  MISS:       8063
+L2C PREFETCH  ACCESS:     200560  HIT:     187913  MISS:      12647
+L2C WRITEBACK ACCESS:      74087  HIT:      73826  MISS:        261
+L2C PREFETCH  REQUESTED:      33098  ISSUED:      33098  USEFUL:       6637  USELESS:       5783
+L2C AVERAGE MISS LATENCY: 135.737 cycles
+LLC TOTAL     ACCESS:     115778  HIT:      41579  MISS:      74199
+LLC LOAD      ACCESS:      75706  HIT:      16163  MISS:      59543
+LLC RFO       ACCESS:       8062  HIT:       2648  MISS:       5414
+LLC PREFETCH  ACCESS:      12822  HIT:       3707  MISS:       9115
+LLC WRITEBACK ACCESS:      19188  HIT:      19061  MISS:        127
+LLC PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:        739  USELESS:       5693
+LLC AVERAGE MISS LATENCY: 137.937 cycles
+Major fault: 0 Minor fault: 4413
+CPU 0 L1I next line prefetcher final stats
+CPU 0 L2C PC-based stride prefetcher final stats
+
+DRAM Statistics
+ CHANNEL 0
+ RQ ROW_BUFFER_HIT:      25786  ROW_BUFFER_MISS:      48286
+ DBUS_CONGESTED:       6406
+ WQ ROW_BUFFER_HIT:       2139  ROW_BUFFER_MISS:       4291  FULL:          0
+
+ AVG_CONGESTED_CYCLE: 6
+
+CPU 0 Branch Prediction Accuracy: 95.1753% MPKI: 10.0065 Average ROB Occupancy at Mispredict: 48.2643
+
+Branch types
+NOT_BRANCH: 198149988 79.26%
+BRANCH_DIRECT_JUMP: 4035303 1.61412%
+BRANCH_INDIRECT: 2372644 0.949058%
+BRANCH_CONDITIONAL: 40626452 16.2506%
+BRANCH_DIRECT_CALL: 2196649 0.87866%
+BRANCH_INDIRECT_CALL: 211000 0.0844%
+BRANCH_RETURN: 2407651 0.96306%
+BRANCH_OTHER: 0 0%
+
