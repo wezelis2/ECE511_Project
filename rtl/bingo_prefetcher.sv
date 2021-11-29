@@ -17,13 +17,13 @@ module bingo_prefetcher #(
 );
 	// global localparams
 	localparam  int 	PC_WIDTH 				= 	WIDTH;
-	localparam  int 	OFFSET_WIDTH 			= 	$clog2(PC_WIDTH;
+	localparam  int 	OFFSET_WIDTH 			= 	$clog2(PC_WIDTH);
 	localparam  int 	NUM_TABLES 				= 	4;
 	
 	// accumulation tableslocalparams
 	localparam  int 	AT_NUM_SETS 			= 	8;
 	localparam 	int 	AT_NUM_WAYS 			=  	16;
-	localparam 	int 	AT_TAG_WIDTH 			=  	37 - $clog(AT_NUM_SETS);
+	localparam 	int 	AT_TAG_WIDTH 			=  	37 - $clog2(AT_NUM_SETS);
 	localparam  int 	AT_FOOTPRINT_WIDTH 		= 	32;
 	localparam  int 	AT_LRU_WIDTH 			= 	$clog2(AT_NUM_WAYS);
 
@@ -34,7 +34,7 @@ module bingo_prefetcher #(
 	localparam  int 	FT_LRU_WIDTH 			= 	$clog2(FT_NUM_WAYS);
 
 	// pattern history tableslocalparams
-	localparam  int 	PHT_NUM_SETS 			= 	512;
+	localparam  int 	PHT_NUM_SETS 			= 	16;
 	localparam 	int 	PHT_NUM_WAYS 			=  	16;
 	localparam 	int 	PHT_TAG_WIDTH 			= 	32 - $clog2(PHT_NUM_SETS);
 	localparam  int 	PHT_LRU_WIDTH 			= 	$clog2(PHT_NUM_WAYS);
@@ -98,12 +98,15 @@ module bingo_prefetcher #(
 	int 									NUM_SETS_ARR[NUM_TABLES];
 	int 									NUM_WAYS_ARR[NUM_TABLES];
 
+	// logic fake_clk;
+
 	//######################################################################################
 	//										LOGIC ASSIGNMENTS
 	//######################################################################################
 	assign 									NUM_SETS_ARR = '{AT_NUM_SETS, FT_NUM_SETS, PHT_NUM_SETS, PF_NUM_SETS};
 	assign 									NUM_WAYS_ARR = '{AT_NUM_WAYS, FT_NUM_WAYS, PHT_NUM_WAYS, PF_NUM_WAYS};
 
+	// assign 									fake_clk = clk * clk * clk * clk;
 	//######################################################################################
 	//										MODULE DECLARATION
 	//######################################################################################
@@ -127,6 +130,14 @@ module bingo_prefetcher #(
 			end 
 		end 
 	endtask
+
+	task dont_accumulation_tables();
+		for(int i = 0; i < AT_NUM_SETS; i++) begin 
+			for(int j = 0; j < AT_NUM_WAYS; j++) begin 
+				accumulation_tables[i][j].valid <= 1;
+			end 
+		end 
+	endtask
 	
 	task reset_filter_tables();
 		for(int i = 0; i < FT_NUM_SETS; i++) begin 
@@ -146,16 +157,9 @@ module bingo_prefetcher #(
 
 	task reset_prefetch_streamer_tables();
 		for(int i = 0; i < PF_NUM_SETS; i++) begin 
-			for(int j = 0; j < PF_NUM_WAYS; j++) begin 
-				prefetch_streamer_tables[i][j] <= '0;
-			end 
+				prefetch_streamer_tables[i] <= '0;
 		end 
 	endtask
-
-	function void set_defaults();
-
-	endfunction
-
 
 	//######################################################################################
 	//									MISC TASKS
@@ -164,24 +168,24 @@ module bingo_prefetcher #(
 		bingo_word index, tag;
 		int lru_way;
 
-		index 	= key % NUM_SETS_ARR[selected_table];
+		index 	= signed'(key % NUM_SETS_ARR[selected_table]);
 		lru_way = get_lru(key, selected_table);
 		case (selected_table)
 			ACC_TABLE		: begin 
 				accumulation_tables[index][lru_way].LRU <= AT_NUM_WAYS;
 			end 
 
-			FILTER_TABLE	: begin 
-				filter_tables[index][lru_way].LRU <= FT_NUM_WAYS;
-			end 
+			// FILTER_TABLE	: begin 
+			// 	filter_tables[index][lru_way].LRU <= FT_NUM_WAYS;
+			// end 
 
-			PH_TABLE		: begin 
-				pattern_history_tables[index][lru_way].LRU <= PHT_NUM_WAYS;
-			end 
+			// PH_TABLE		: begin 
+			// 	pattern_history_tables[index][lru_way].LRU <= PHT_NUM_WAYS;
+			// end 
 
-			PF_STREAMER		: begin 
-				prefetch_streamer_tables[index][lru_way].LRU <= PF_NUM_WAYS;
-			end 
+			// PF_STREAMER		: begin 
+			// 	prefetch_streamer_tables[index].LRU <= PF_NUM_WAYS;
+			// end 
 		endcase
 	endtask
 
@@ -190,25 +194,25 @@ module bingo_prefetcher #(
 		bingo_word index, tag;
 
 		entry 	= find(key, selected_table);
-		index 	= key % NUM_SETS_ARR[selected_table];
-		tag 	= key / NUM_SETS_ARR[selected_table];
+		index 	= signed'(key % NUM_SETS_ARR[selected_table]);
+		tag 	= signed'(key / NUM_SETS_ARR[selected_table]);
 
 		case (selected_table)
 			ACC_TABLE		: begin 
-				accumulation_tables[index][lru_way].valid <= 0;
+				accumulation_tables[index][entry].valid <= 0;
 			end 
 
-			FILTER_TABLE	: begin 
-				filter_tables[index][lru_way].valid <= 0;
-			end 
+			// FILTER_TABLE	: begin 
+			// 	filter_tables[index][entry].valid <= 0;
+			// end 
 
-			PH_TABLE		: begin 
-				pattern_history_tables[index][lru_way].valid <= 0;
-			end 
+			// PH_TABLE		: begin 
+			// 	pattern_history_tables[index][entry].valid <= 0;
+			// end 
 
-			PF_STREAMER		: begin 
-				prefetch_streamer_tables[index][lru_way].valid <= 0;
-			end 
+			// PF_STREAMER		: begin 
+			// 	prefetch_streamer_tables[index].valid <= 0;
+			// end 
 		endcase
 	endtask
 
@@ -226,8 +230,8 @@ module bingo_prefetcher #(
 	function bingo_word find(bingo_word key, table_type selected_table);
 		bingo_word index, tag;
 
-		index 	= key % NUM_SETS_ARR[selected_table];
-		tag 	= key / NUM_SETS_ARR[selected_table];
+		index 	= signed'(key % NUM_SETS_ARR[selected_table]);
+		tag 	= signed'(key / NUM_SETS_ARR[selected_table]);
 
 		for (bingo_word i = 0; i < NUM_WAYS_ARR[selected_table] && i < 16; i++) begin 
 			case (selected_table)
@@ -236,20 +240,20 @@ module bingo_prefetcher #(
 						return i;
 				end 
 
-				FILTER_TABLE	: begin 
-					if (filter_tables[index][i].tag == tag)
-						return i;
-				end 
+				// FILTER_TABLE	: begin 
+				// 	if (filter_tables[index][i].tag == tag)
+				// 		return i;
+				// end 
 
-				PH_TABLE		: begin 
-					if (pattern_history_tables[index][i].tag == tag)
-						return i;
-				end 
+				// PH_TABLE		: begin 
+				// 	// if (pattern_history_tables[index][i].tag == tag)
+				// 	// 	return i;
+				// end 
 
-				PF_STREAMER		: begin 
-					if (prefetch_streamer_tables[index][i].tag == tag)
-						return i;
-				end 
+				// PF_STREAMER		: begin 
+				// 	if (prefetch_streamer_tables[index].tag == tag)
+				// 		return i;
+				// end 
 			endcase
 		end 
 
@@ -260,8 +264,8 @@ module bingo_prefetcher #(
 		bingo_word index, tag;
 		int way;
 
-		index 	= key % NUM_SETS_ARR[selected_table];
-		tag 	= key / NUM_SETS_ARR[selected_table];
+		index 	= signed'(key % NUM_SETS_ARR[selected_table]);
+		tag 	= signed'(key / NUM_SETS_ARR[selected_table]);
 
 		for(bingo_word i = 0; i < NUM_WAYS_ARR[selected_table]; i++) begin 
 			case (selected_table)
@@ -270,48 +274,56 @@ module bingo_prefetcher #(
 						return i;
 				end 
 
-				FILTER_TABLE	: begin 
-					if (filter_tables[index][i].tag == tag)
-						return i;
-				end 
+				// FILTER_TABLE	: begin 
+				// 	if (filter_tables[index][i].tag == tag)
+				// 		return i;
+				// end 
 
-				PH_TABLE		: begin 
-					if (pattern_history_tables[index][i].tag == tag)
-						return i;
-				end 
+				// PH_TABLE		: begin 
+				// 	if (pattern_history_tables[index][i].tag == tag)
+				// 		return i;
+				// end 
 
-				PF_STREAMER		: begin 
-					if (prefetch_streamer_tables[index][i].tag == tag)
-						return i;
-				end 
+				// PF_STREAMER		: begin 
+				// 	if (prefetch_streamer_tables[index].tag == tag)
+				// 		return i;
+				// end 
 			endcase
 		end 
 		return -1;
 	endfunction
 
 	task prefetch (bingo_word block_address, table_type selected_table);
-		int pf_issued = 0;
-		int pf_offset = 0;
-		bingo_word prefetch_width_pf = 512;
-		bingo_word base_addr = block_address << 6 // LOG2_BLOC_SIZE ChampSim 64-bit offset ;
-		bingo_word region_offset = block_address % prefetch_width_pf;
-		bingo_word region_number = block_address / prefetch_width_pf;
-		bingo_word key = get_hash_index(region_number,prefetch_width_pf );
-		bingo_word entry = find(key, selected_table);
+		int pf_issued;
+		int pf_offset;
+		bingo_word prefetch_width_pf;
+		bingo_word base_addr;
+		bingo_word region_offset;
+		bingo_word region_number;
+		bingo_word key;
+		bingo_word entry;
+		bingo_word pattern;
+		bingo_word pf_address;
+
+		pf_issued = 0;
+		pf_offset = 0;
+		prefetch_width_pf = 512;
+		base_addr = block_address << 6; // LOG2_BLOC_SIZE ChampSim 64-bit offset ;
+		region_offset = block_address % prefetch_width_pf;
+		region_number = block_address / prefetch_width_pf;
+		key = get_hash_index(region_number,prefetch_width_pf );
+		entry = find(key, selected_table);
+		pattern = accumulation_tables[region_number][region_offset];
 
 		if (~entry)
 			return;
 		
-		set_mru(key, selected_table);
-
-		// bogus duble for loop here
-		bingo_word pattern=accumulation_tables[region_number][region_offset];
-		bingo_word pf_offset;
+		// set_mru(key, selected_table);
 
 		for (int d = 1; d< prefetch_width_pf; d++) begin
 			for (int sgn = -1; sgn< prefetch_width_pf; sgn++) begin
 				if(pf_offset>=0 && pf_offset < prefetch_width_pf && pattern >0) begin
-					bingo_word pf_address = (region_number + region_offset + pf_offset);
+					pf_address = (region_number + region_offset + pf_offset);
 					if (up_valid_i && ~up_prefetched_i && lo_ready_i) begin
 						lo_prefetch_address_o = pf_address;
 						lo_prefetch_valid_o = 1'b1;
@@ -320,7 +332,7 @@ module bingo_prefetcher #(
 			end
 		end
 
-		erase(key, selected_table);
+		// erase(key, selected_table);
 	endtask
 
 	//######################################################################################
@@ -332,18 +344,24 @@ module bingo_prefetcher #(
 		if (rst) begin
 			reset();
 		end else begin
-			for(int i = 0; i<4; i++) begin
-				prefetch(up_address_i,	ACC_TABLE);
-				prefetch(up_address_i,	FILTER_TABLE);
-				prefetch(up_address_i,	PH_TABLE);
-				prefetch(up_address_i,	PF_STREAMER);
-							
-			end
+			dont_accumulation_tables();
+			prefetch(up_address_i,	ACC_TABLE);
+			
+			// for(int i = 0; i<4; i++) begin
+			// 	prefetch(up_address_i,	ACC_TABLE);
+			// 	prefetch(up_address_i,	FILTER_TABLE);
+			// 	prefetch(up_address_i,	PH_TABLE);
+			// 	prefetch(up_address_i,	PF_STREAMER);	
+			// end
 		end
 	end
 
-	always_comb begin 
-
+	always_ff @(negedge clk) begin
+		if (rst) begin
+			reset();
+		end else begin
+			reset();
+		end
 	end
 
 endmodule

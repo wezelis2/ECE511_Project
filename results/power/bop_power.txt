@@ -2,15 +2,15 @@
 ****************************************
 Report : power
         -analysis_effort low
-Design : best_offset_prefetcher_1
+Design : best_offset_prefetcher
 Version: R-2020.09-SP4
-Date   : Tue Nov 16 01:34:56 2021
+Date   : Sat Nov 27 04:45:20 2021
 ****************************************
 
 
 Library(s) Used:
 
-    gscl45nm (File: /home/ericd3/ece511/ECE511_Project/rtl/gscl45nm.db)
+    gscl45nm (File: /home/ericd3/ece511/ECE511_Project/techlib/gscl45nm.db)
 
 
 Operating Conditions: typical   Library: gscl45nm
@@ -26,12 +26,12 @@ Power-specific unit information :
     Leakage Power Units = 1nW
 
 
-  Cell Internal Power  =  43.4448 mW   (95%)
-  Net Switching Power  =   2.1783 mW    (5%)
+  Cell Internal Power  =  14.0403 mW   (93%)
+  Net Switching Power  =   1.0680 mW    (7%)
                          ---------
-Total Dynamic Power    =  45.6231 mW  (100%)
+Total Dynamic Power    =  15.1083 mW  (100%)
 
-Cell Leakage Power     = 607.3827 uW
+Cell Leakage Power     = 248.5162 uW
 
 
                  Internal         Switching           Leakage            Total
@@ -41,9 +41,9 @@ io_pad             0.0000            0.0000            0.0000            0.0000 
 memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
 black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
 clock_network      0.0000            0.0000            0.0000            0.0000  (   0.00%)
-register          41.5527        3.5790e-02        3.2409e+05           41.9123  (  90.65%)
-sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
-combinational      1.8947            2.1424        2.8329e+05            4.3209  (   9.35%)
+register          13.0959        9.4159e-03        1.0215e+05           13.2074  (  86.00%)
+sequential     3.3361e-03        2.0431e-03          588.0792        5.9673e-03  (   0.04%)
+combinational      0.9412            1.0565        1.4578e+05            2.1435  (  13.96%)
 --------------------------------------------------------------------------------------------------
-Total             43.4474 mW         2.1782 mW     6.0738e+05 nW        46.2332 mW
+Total             14.0404 mW         1.0680 mW     2.4852e+05 nW        15.3568 mW
 1
