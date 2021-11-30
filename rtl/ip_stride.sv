@@ -28,9 +28,7 @@ struct {
 	cla_t last_cla;
 	stride_t last_stride;
 	lru_t lru;
-} IP_TRACKER;
-
-IP_TRACKER trackers[IP_TRACKER_COUNT];
+} trackers[IP_TRACKER_COUNT];
 
 cla_t cl_addr;
 int ip_match_idx, lru_idx;
