@@ -137,12 +137,10 @@ module bingo_prefetcher #(
 		ct = 0;
 		for(int i = 0; i < AT_NUM_SETS; i++) begin 
 			for(int j = 0; j < AT_NUM_WAYS; j++) begin
-				if (accumulation_tables[i][j]) begin
-					ct++;
-					accumulation_tables[i][j] <= accumulation_tables[i][j] + 1;
-					if (get_up_set(up_address_i) == accumulation_tables[i][j][$clog2(UP_NUM_SET):0])
-						lo_prefetch_address_o <= up_address_i;
-				end
+				ct++;
+				accumulation_tables[i][j] <= accumulation_tables[i][j] + 1;
+				if (get_up_set(up_address_i) == accumulation_tables[i][j][$clog2(UP_NUM_SET):0])
+					lo_prefetch_address_o <= up_address_i;
 			end 
 		end
 
@@ -162,12 +160,10 @@ module bingo_prefetcher #(
 		ct = 0;
 		for(int i = 0; i < PHT_NUM_SETS; i++) begin 
 			for(int j = 0; j < PHT_NUM_WAYS; j++) begin
-				if (pattern_history_tables[i][j]) begin
-					ct++;
-					pattern_history_tables[i][j] <= pattern_history_tables[i][j] + 1;
-					if (get_up_way(up_address_i) == pattern_history_tables[i][j][$clog2(UP_NUM_ASSO):0])
-						lo_prefetch_valid_o <= 1;
-				end
+				ct++;
+				pattern_history_tables[i][j] <= pattern_history_tables[i][j] + 1;
+				if (get_up_way(up_address_i) == pattern_history_tables[i][j][$clog2(UP_NUM_ASSO):0])
+					lo_prefetch_valid_o <= 1;
 			end 
 		end
 
@@ -194,9 +190,9 @@ module bingo_prefetcher #(
 
 	task prefetch_streamer_tables_analyze();
 		for(int i = 0; i < PF_NUM_SETS; i++) begin 
-				prefetch_streamer_tables[i] <= prefetch_streamer_tables[i] + 1 + up_address_i;
-				if (get_up_set(up_address_i) == prefetch_streamer_tables[i][$clog2(UP_NUM_SET):0])
-					lo_prefetch_address_o <= up_address_i;
+			prefetch_streamer_tables[i] <= prefetch_streamer_tables[i] + 1 + up_address_i;
+			if (get_up_set(up_address_i) == prefetch_streamer_tables[i][$clog2(UP_NUM_SET):0])
+				lo_prefetch_address_o <= up_address_i;
 		end 
 	endtask
 	
