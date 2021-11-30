@@ -5,9 +5,19 @@
 `timescale 1ns/10ps
 module stride_tb;
 
-logic clk, rst, pref_valid1, pref_valid2, pref_valid3;
-logic [63:0] addr, ip, pref_addr1, pref_addr2, pref_addr3;
-logic found1, found2, found3;
+logic clk;
+logic rst
+logic pref_valid1;
+logic pref_valid2;
+logic pref_valid3;
+logic [63:0] addr;
+logic [63:0] ip;
+logic [63:0] pref_addr1;
+logic [63:0] pref_addr2;
+logic [63:0] pref_addr3;
+logic found1;
+logic found2;
+logic found3;
 int cycle_cnt;
 
 task reset_prefetch();

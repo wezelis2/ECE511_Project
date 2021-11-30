@@ -603,6 +603,7 @@ class PatternHistoryTable : public LRUSetAssociativeCache<PatternHistoryTableDat
     int min_addr_width, max_addr_width, pc_width;
     Event last_event;
 
+    //CHANGE THIS TO 16 SETS / 16 WAYS
     /*======================================================*/
     /* Entry   = [tag, map, valid, LRU]                     */
     /* Storage = size * (32 - lg(sets) + 32 + 1 + lg(ways)) */
@@ -1057,7 +1058,7 @@ void CACHE::l1d_prefetcher_initialize() {
     const int MAX_ADDR_WIDTH = 16;     /* number of Address bits used for PC+Address matching */
     const int FT_SIZE = 64;            /* size of filter table */
     const int AT_SIZE = 128;           /* size of accumulation table */
-    const int PHT_SIZE = 8 * 1024;     /* size of pattern history table (PHT) */
+    const int PHT_SIZE = /*(8 * 1024)*/ 16*16;     /* size of pattern history table (PHT) */
     const int PHT_WAYS = 16;           /* associativity of PHT */
     const int PF_STREAMER_SIZE = 128;  /* size of prefetch streamer */
     /*======================*/
