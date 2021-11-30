@@ -22,13 +22,12 @@ parameter CLA_SIZE = ADDR_SIZE - LOG2_BLOCK_SIZE;
 typedef logic[ADDR_SIZE-1:0]              addr_t;
 typedef logic[CLA_SIZE-1:0]               cla_t;
 typedef logic signed[CLA_SIZE-1:0]        stride_t;
-typedef logic[$clog2(IP_TRACKER_COUNT):0] lru_t;
 
 //trackers
 addr_t ip[IP_TRACKER_COUNT];
 cla_t last_cla[IP_TRACKER_COUNT];
 stride_t last_stride[IP_TRACKER_COUNT];
-lru_t lru[IP_TRACKER_COUNT];
+logic lru[IP_TRACKER_COUNT];
 
 cla_t cla;
 int ip_match_idx, lru_idx;
@@ -67,12 +66,14 @@ always_comb begin
 	end
 end
 
-//Find current LRU
+//Find current LRU --> USING BIT PSEUDO-LRU
 always_comb begin
 	lru_idx = -1;
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (lru[i] == (IP_TRACKER_COUNT - 1))
+		if (lru[i] == 1'b0) begin
 			lru_idx = i;
+			break;
+		end
 	end
 end
 
@@ -93,7 +94,7 @@ function void reset();
 		ip[i] <= '0;
 		last_cla[i] <= '0;
 		last_stride[i] <= '0;
-		lru[i] <= i;
+		lru[i] <= 1'b0;
 	end
 	pref_valid1 <= 1'b0;
 	pref_valid2 <= 1'b0;
@@ -102,12 +103,23 @@ endfunction
 
 //Set given index as most recently used
 function void set_mru(int idx);
+	logic found_zero = 1'b0;
+	
+	lru[idx] = 1'b1;
+
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (lru[i] < lru[idx])
-			lru[i] <= lru[i] + 1'b1;
+		if (lru[i] == 1'b0) begin
+			found_zero = 1'b1;
+			break;
+		end
 	end
 
-	lru[idx] <= '0;
+	if (~found_zero) begin
+		for (int i = 0; i < IP_TRACKER_COUNT; i++)
+			lru[i] = 1'b0;
+	end
+
+	lru[idx] = 1'b1;
 endfunction
 
 //Assign the LRU tracker to the current IP
