@@ -74,11 +74,11 @@ always @(posedge clk) begin
 
   if (cycle_cnt < 100) begin
     if (pref_valid1)
-      $display("Cycle %d: Prefetched (slot 1) addr %u", cycle_cnt, pref_addr1);
+      $display("Cycle %d: Prefetched (slot 1) addr %d", cycle_cnt, pref_addr1);
     if (pref_valid2)
-      $display("Cycle %d: Prefetched (slot 2) addr %u", cycle_cnt, pref_addr2);
+      $display("Cycle %d: Prefetched (slot 2) addr %d", cycle_cnt, pref_addr2);
     if (pref_valid3)
-      $display("Cycle %d: Prefetched (slot 3) addr %u", cycle_cnt, pref_addr3);
+      $display("Cycle %d: Prefetched (slot 3) addr %d", cycle_cnt, pref_addr3);
   end
 
   if (pref_valid1)
