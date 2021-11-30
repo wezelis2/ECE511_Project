@@ -24,12 +24,11 @@ typedef logic[CLA_SIZE-1:0]               cla_t;
 typedef logic signed[CLA_SIZE-1:0]        stride_t;
 typedef logic[$clog2(IP_TRACKER_COUNT):0] lru_t;
 
-struct {
-	addr_t ip;
-	cla_t last_cla;
-	stride_t last_stride;
-	lru_t lru;
-} trackers[IP_TRACKER_COUNT];
+//trackers
+addr_t ip[IP_TRACKER_COUNT];
+cla_t last_cla[IP_TRACKER_COUNT];
+stride_t last_stride[IP_TRACKER_COUNT];
+lru_t lru[IP_TRACKER_COUNT];
 
 cla_t cla;
 int ip_match_idx, lru_idx;
@@ -53,7 +52,7 @@ assign pref_addr3 = (cla + (stride*3)) << LOG2_BLOCK_SIZE;
 
 //Assign intermediate values
 assign cla = addr_i >> LOG2_BLOCK_SIZE;
-assign stride_match = stride === trackers[ip_match_idx].last_stride ? 1'b1 : 1'b0;
+assign stride_match = stride == last_stride[ip_match_idx] ? 1'b1 : 1'b0;
 assign addr1_page_match = (pref_addr1 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE_SIZE) ? 1'b1 : 1'b0;
 assign addr2_page_match = (pref_addr2 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE_SIZE) ? 1'b1 : 1'b0;
 assign addr3_page_match = (pref_addr3 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE_SIZE) ? 1'b1 : 1'b0;
@@ -63,7 +62,7 @@ assign addr3_page_match = (pref_addr3 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE
 always_comb begin
 	ip_match_idx = -1;
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (trackers[i].ip == ip_i)
+		if (ip[i] == ip_i)
 			ip_match_idx = i;
 	end
 end
@@ -72,7 +71,7 @@ end
 always_comb begin
 	lru_idx = -1;
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (trackers[i].lru == (IP_TRACKER_COUNT - 1))
+		if (lru[i] == (IP_TRACKER_COUNT - 1))
 			lru_idx = i;
 	end
 end
@@ -81,20 +80,20 @@ end
 always_comb begin
 	stride = '0;
 	if (ip_match_idx != -1) begin
-		if (cla > trackers[ip_match_idx].last_cla)
-			stride = signed'(cla - trackers[ip_match_idx].last_cla);
+		if (cla > last_cla[ip_match_idx])
+			stride = signed'(cla - last_cla[ip_match_idx]);
 		else
-			stride = -1 * signed'(trackers[ip_match_idx].last_cla - cla);
+			stride = -1 * signed'(last_cla[ip_match_idx] - cla);
 	end
 end
 
 //Reset all trackers
 function void reset();
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		trackers[i].ip <= '0;
-		trackers[i].last_cla <= '0;
-		trackers[i].last_stride <= '0;
-		trackers[i].lru <= i;
+		ip[i] <= '0;
+		last_cla[i] <= '0;
+		last_stride[i] <= '0;
+		lru[i] <= i;
 	end
 	pref_valid1 <= 1'b0;
 	pref_valid2 <= 1'b0;
@@ -104,18 +103,18 @@ endfunction
 //Set given index as most recently used
 function void set_mru(int idx);
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (trackers[i].lru < trackers[idx].lru)
-			trackers[i].lru <= trackers[i].lru + 1'b1;
+		if (lru[i] < lru[idx])
+			lru[i] <= lru[i] + 1'b1;
 	end
 
-	trackers[idx].lru <= '0;
+	lru[idx] <= '0;
 endfunction
 
 //Assign the LRU tracker to the current IP
 function void allocate_new_tracker();
-	trackers[lru_idx].ip <= ip_i;
-	trackers[lru_idx].last_cla <= cla;
-	trackers[lru_idx].last_stride <= '0;
+	ip[lru_idx] <= ip_i;
+	last_cla[lru_idx] <= cla;
+	last_stride[lru_idx] <= '0;
 	set_mru(lru_idx);	
 endfunction
 
@@ -125,8 +124,8 @@ function void update_tracker();
 	pref_valid2 <= stride_match & addr2_page_match;
 	pref_valid3 <= stride_match & addr3_page_match;
 
-    trackers[ip_match_idx].last_cla <= cla;
-    trackers[ip_match_idx].last_stride <= stride;
+    last_cla[ip_match_idx] <= cla;
+    last_stride[ip_match_idx] <= stride;
  	set_mru(ip_match_idx);
 endfunction
 
