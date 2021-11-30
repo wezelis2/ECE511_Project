@@ -90,7 +90,7 @@ always @(posedge clk) begin
 
   addr = addr + 57;
   ip <= cycle_cnt % 10;
-  cycle_cnt = cycle_count + 1;
+  cycle_cnt = cycle_cnt + 1;
 end
 
 endmodule
