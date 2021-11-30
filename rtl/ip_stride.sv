@@ -16,6 +16,7 @@ module ip_stride #(parameter IP_TRACKER_COUNT = 64)
 
 parameter ADDR_SIZE = 64;
 parameter LOG2_BLOCK_SIZE = 6;
+parameter LOG2_PAGE_SIZE 12
 parameter CLA_SIZE = ADDR_SIZE - LOG2_BLOCK_SIZE;
 
 typedef logic[ADDR_SIZE-1:0]              addr_t;
@@ -30,11 +31,11 @@ struct {
 	lru_t lru;
 } trackers[IP_TRACKER_COUNT];
 
-cla_t cl_addr;
+cla_t cla;
 int ip_match_idx, lru_idx;
 stride_t stride;
 logic pref_valid1, pref_valid2, pref_valid3;
-addr_t pref_addr1, pref_addr2, pref_addr3_o;
+addr_t pref_addr1, pref_addr2, pref_addr3;
 logic stride_match, addr1_page_match, addr2_page_match, addr3_page_match;
 
 //Assign outputs
@@ -51,7 +52,7 @@ assign pref_addr2 = (cla + (stride*2)) << LOG2_BLOCK_SIZE;
 assign pref_addr3 = (cla + (stride*3)) << LOG2_BLOCK_SIZE;
 
 //Assign intermediate values
-assign cla = addr >> LOG2_BLOCK_SIZE;
+assign cla = addr_i >> LOG2_BLOCK_SIZE;
 assign stride_match = stride === trackers[ip_match_idx].last_stride ? 1'b1 : 1'b0;
 assign addr1_page_match = (pref_addr1 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE_SIZE) ? 1'b1 : 1'b0;
 assign addr2_page_match = (pref_addr2 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE_SIZE) ? 1'b1 : 1'b0;
