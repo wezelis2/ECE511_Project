@@ -141,3 +141,5 @@ always_ff @(posedge clk) begin
 		update_tracker();
 	end
 end
+
+endmodule // ip_stride
