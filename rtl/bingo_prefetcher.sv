@@ -140,7 +140,7 @@ module bingo_prefetcher #(
 				if (~accumulation_tables[i][j]) begin
 					ct++;
 					accumulation_tables[i][j] <= accumulation_tables[i][j] + 1;
-					if (get_up_set(up_address_i) == accumulation_tables[i][$clog2(UP_NUM_SET):0])
+					if (get_up_set(up_address_i) == accumulation_tables[i][j][$clog2(UP_NUM_SET):0])
 						lo_prefetch_address_o <= up_address_i;
 				end
 					
