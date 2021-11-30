@@ -63,7 +63,7 @@ assign addr3_page_match = (pref_addr3 >> LOG2_PAGE_SIZE) == (addr_i >> LOG2_PAGE
 always_comb begin
 	ip_match_idx = -1;
 	for (int i = 0; i < IP_TRACKER_COUNT; i++) begin
-		if (trackers[i].ip == ip)
+		if (trackers[i].ip == ip_i)
 			ip_match_idx = i;
 	end
 end
@@ -125,7 +125,7 @@ function void update_tracker();
 	pref_valid2 <= stride_match & addr2_page_match;
 	pref_valid3 <= stride_match & addr3_page_match;
 
-    trackers[ip_match_idx].last_cla <= cl_addr;
+    trackers[ip_match_idx].last_cla <= cla;
     trackers[ip_match_idx].last_stride <= stride;
  	set_mru(ip_match_idx);
 endfunction
