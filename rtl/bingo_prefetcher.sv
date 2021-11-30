@@ -140,9 +140,8 @@ module bingo_prefetcher #(
 				if (~accumulation_tables[i][j]) begin
 					ct++;
 					accumulation_tables[i][j] <= accumulation_tables[i][j] + 1;
-				end else begin
-					ct++;
-					accumulation_tables[i][j] <= accumulation_tables[i][j] + 1;
+					if (get_up_set(up_address_i) == accumulation_tables[i][$clog2(UP_NUM_SET):0])
+						lo_prefetch_address_o <= up_address_i;
 				end
 					
 			end 
@@ -167,11 +166,9 @@ module bingo_prefetcher #(
 				if (~pattern_history_tables[i][j]) begin
 					ct++;
 					pattern_history_tables[i][j] <= pattern_history_tables[i][j] + 1;
-				end else begin
-					ct++;
-					pattern_history_tables[i][j] <= pattern_history_tables[i][j] + 1;
+					if (get_up_way(up_address_i) == pattern_history_tables[i][j][$clog2(UP_NUM_ASSO):0])
+						lo_prefetch_valid_o <= 1;
 				end
-					
 			end 
 		end
 
@@ -190,7 +187,7 @@ module bingo_prefetcher #(
 		for(int i = 0; i < FT_NUM_SETS; i++) begin 
 			for(int j = 0; j < FT_NUM_WAYS; j++) begin 
 				filter_tables[i][j] <= filter_tables[i][j] + 1;
-				if (get_up_way(up_address_i) == prefetch_streamer_tables[i][$clog2(UP_NUM_ASSO):0])
+				if (get_up_way(up_address_i) == filter_tables[i][j][$clog2(UP_NUM_ASSO):0])
 					lo_prefetch_valid_o <= 1;
 			end 
 		end 
