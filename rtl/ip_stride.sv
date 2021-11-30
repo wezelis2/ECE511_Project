@@ -16,7 +16,7 @@ module ip_stride #(parameter IP_TRACKER_COUNT = 64)
 
 parameter ADDR_SIZE = 64;
 parameter LOG2_BLOCK_SIZE = 6;
-parameter LOG2_PAGE_SIZE 12
+parameter LOG2_PAGE_SIZE = 12;
 parameter CLA_SIZE = ADDR_SIZE - LOG2_BLOCK_SIZE;
 
 typedef logic[ADDR_SIZE-1:0]              addr_t;
