@@ -1,4 +1,4 @@
-module prefetcher #(parameter IP_TRACKER_COUNT = 64)
+module ip_stride #(parameter IP_TRACKER_COUNT = 64)
 (
 	input   logic 			clk,
 	input   logic 			rst,
