@@ -72,7 +72,7 @@ always @(posedge clk) begin
     $finish;
   end
 
-  if (cycle_cnt < 20) begin
+  if (cycle_cnt < 100) begin
     if (pref_valid1)
       $display("Cycle %d: Prefetched (slot 1) addr %u", cycle_cnt, pref_addr1);
     if (pref_valid2)
