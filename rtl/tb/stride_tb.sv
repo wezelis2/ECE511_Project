@@ -6,7 +6,7 @@
 module stride_tb;
 
 logic clk;
-logic rst
+logic rst;
 logic pref_valid1;
 logic pref_valid2;
 logic pref_valid3;
