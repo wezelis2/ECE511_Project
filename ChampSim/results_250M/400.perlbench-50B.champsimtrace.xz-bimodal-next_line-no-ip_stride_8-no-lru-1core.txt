@@ -1,0 +1,23 @@
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+
+Warmup Instructions: 50000000
+Simulation Instructions: 250000000
+Number of CPUs: 1
+LLC sets: 2048
+LLC ways: 16
+Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 3200 MT/s
+
+CPU 0 runs /home/wezelis2/ece511/ECE511_Project/ChampSim/dpc3_traces/400.perlbench-50B.champsimtrace.xz
+CPU 0 Bimodal branch predictor
+CPU 0 L1I next line prefetcher
+CPU 0 L2C IP-based stride prefetcher
+Heartbeat CPU 0 instructions: 10000002 cycles: 4648596 heartbeat IPC: 2.15119 cumulative IPC: 2.15119 (Simulation time: 0 hr 0 min 27 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 8871825 heartbeat IPC: 2.36786 cumulative IPC: 2.25433 (Simulation time: 0 hr 0 min 54 sec) 
+Heartbeat CPU 0 instructions: 30000003 cycles: 12863495 heartbeat IPC: 2.50522 cumulative IPC: 2.33218 (Simulation time: 0 hr 1 min 20 sec) 
+Heartbeat CPU 0 instructions: 40000002 cycles: 16778687 heartbeat IPC: 2.55415 cumulative IPC: 2.38398 (Simulation time: 0 hr 1 min 47 sec) 
+Heartbeat CPU 0 instructions: 50000003 cycles: 20966380 heartbeat IPC: 2.38795 cumulative IPC: 2.38477 (Simulation time: 0 hr 2 min 17 sec) 
+
+Warmup complete CPU 0 instructions: 50000003 cycles: 20966380 (Simulation time: 0 hr 2 min 17 sec) 
+
+Heartbeat CPU 0 instructions: 60000002 cycles: 32470591 heartbeat IPC: 0.869247 cumulative IPC: 0.869247 (Simulation time: 0 hr 2 min 41 sec) 
