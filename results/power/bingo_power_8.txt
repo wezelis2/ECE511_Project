@@ -1,0 +1,56 @@
+report_power
+Loading db file '/home/saransh2/ece511/ECE511_Project/techlib/gscl45nm.db'
+Information: Updating design information... (UID-85)
+Warning: Design 'bingo_prefetcher' contains 1 high-fanout nets. A fanout number of 1000 will be used for delay calculations involving these nets. (TIM-134)
+Information: Propagating switching activity (low effort zero delay simulation). (PWR-6)
+Warning: Design has unannotated primary inputs. (PWR-414)
+Warning: Design has unannotated sequential cell outputs. (PWR-415)
+ 
+****************************************
+Report : power
+        -analysis_effort low
+Design : bingo_prefetcher
+Version: Q-2019.12-SP2
+Date   : Tue Nov 30 21:28:05 2021
+****************************************
+
+
+Library(s) Used:
+
+    gscl45nm (File: /home/saransh2/ece511/ECE511_Project/techlib/gscl45nm.db)
+
+
+Operating Conditions: typical   Library: gscl45nm
+Wire Load Model Mode: top
+
+
+Global Operating Voltage = 1.1  
+Power-specific unit information :
+    Voltage Units = 1V
+    Capacitance Units = 1.000000pf
+    Time Units = 1ns
+    Dynamic Power Units = 1mW    (derived from V,C,T units)
+    Leakage Power Units = 1nW
+
+
+  Cell Internal Power  = 186.4591 mW   (93%)
+  Net Switching Power  =  14.5402 mW    (7%)
+                         ---------
+Total Dynamic Power    = 200.9993 mW  (100%)
+
+Cell Leakage Power     =   5.1740 mW
+
+
+                 Internal         Switching           Leakage            Total
+Power Group      Power            Power               Power              Power   (   %    )  Attrs
+--------------------------------------------------------------------------------------------------
+io_pad             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
+clock_network      0.0000            0.0000            0.0000            0.0000  (   0.00%)
+register         175.9946            0.2630        1.3719e+06          177.6294  (  86.14%)
+sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
+combinational     10.4958           14.2773        3.8021e+06           28.5752  (  13.86%)
+--------------------------------------------------------------------------------------------------
+Total            186.4903 mW        14.5403 mW     5.1740e+06 nW       206.2046 mW
+

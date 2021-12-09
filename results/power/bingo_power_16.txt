@@ -1,0 +1,55 @@
+Loading db file '/home/saransh2/ece511/ECE511_Project/techlib/gscl45nm.db'
+Information: Updating design information... (UID-85)
+Warning: Design 'bingo_prefetcher' contains 1 high-fanout nets. A fanout number of 1000 will be used for delay calculations involving these nets. (TIM-134)
+Information: Propagating switching activity (low effort zero delay simulation). (PWR-6)
+Warning: Design has unannotated primary inputs. (PWR-414)
+Warning: Design has unannotated sequential cell outputs. (PWR-415)
+ 
+****************************************
+Report : power
+        -analysis_effort low
+Design : bingo_prefetcher
+Version: Q-2019.12-SP2
+Date   : Tue Nov 30 04:26:23 2021
+****************************************
+
+
+Library(s) Used:
+
+    gscl45nm (File: /home/saransh2/ece511/ECE511_Project/techlib/gscl45nm.db)
+
+
+Operating Conditions: typical   Library: gscl45nm
+Wire Load Model Mode: top
+
+
+Global Operating Voltage = 1.1  
+Power-specific unit information :
+    Voltage Units = 1V
+    Capacitance Units = 1.000000pf
+    Time Units = 1ns
+    Dynamic Power Units = 1mW    (derived from V,C,T units)
+    Leakage Power Units = 1nW
+
+
+  Cell Internal Power  = 287.5736 mW   (91%)
+  Net Switching Power  =  27.0265 mW    (9%)
+                         ---------
+Total Dynamic Power    = 314.6001 mW  (100%)
+
+Cell Leakage Power     =   7.8936 mW
+
+
+                 Internal         Switching           Leakage            Total
+Power Group      Power            Power               Power              Power   (   %    )  Attrs
+--------------------------------------------------------------------------------------------------
+io_pad             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
+black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
+clock_network      0.0000            0.0000            0.0000            0.0000  (   0.00%)
+register         267.8107            0.2563        2.0896e+06          270.1562  (  83.76%)
+sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
+combinational     19.7990           26.7682        5.8039e+06           52.3730  (  16.24%)
+--------------------------------------------------------------------------------------------------
+Total            287.6097 mW        27.0245 mW     7.8936e+06 nW       322.5293 mW
+1

@@ -1,7 +1,7 @@
 set link_library ~/ece511/ECE511_Project/techlib/gscl45nm.db
 set target_library ~/ece511/ECE511_Project/techlib/gscl45nm.db
 set symbol_library ~/ece511/ECE511_Project/techlib/generic.sdb
-read_file -format sverilog {rtl/bingo_prefetcher.sv}
+read_file -format sverilog {rtl/ip_stride.sv}
 
 create_clock -name "CLK" -period 2.000 -waveform { 1.000 2.000 } { clk }
 set_input_delay 0.02 -clock CLK [all_inputs]

@@ -1058,7 +1058,7 @@ void CACHE::l1d_prefetcher_initialize() {
     const int MAX_ADDR_WIDTH = 16;     /* number of Address bits used for PC+Address matching */
     const int FT_SIZE = 64;            /* size of filter table */
     const int AT_SIZE = 128;           /* size of accumulation table */
-    const int PHT_SIZE = /*(8 * 1024)*/ 16*16;     /* size of pattern history table (PHT) */
+    const int PHT_SIZE = /*(8 * 1024)*/ 32*16;     /* size of pattern history table (PHT) */
     const int PHT_WAYS = 16;           /* associativity of PHT */
     const int PF_STREAMER_SIZE = 128;  /* size of prefetch streamer */
     /*======================*/
