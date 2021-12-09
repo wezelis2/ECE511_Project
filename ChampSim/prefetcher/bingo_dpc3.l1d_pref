@@ -7,6 +7,60 @@ using namespace std;
 
 namespace L1D_PREF {
 
+class ArrayAccessCounter
+{
+private:
+  uint64_t num_reads, num_writes, num_readwrites, last_access_cycle;
+  bool read_last, wrote_last;
+
+private:
+  void commit_access()
+  {
+    if (read_last && wrote_last)
+      num_readwrites++;
+    else if (read_last)
+      num_reads++;
+    else if (wrote_last)
+      num_writes++;
+
+    read_last = wrote_last = false;
+    last_access_cycle = current_core_cycle[0];
+  }
+
+
+public:
+  ArrayAccessCounter()
+  {
+    num_reads = num_writes = num_readwrites = 0;
+    last_access_cycle = 0;
+    read_last = wrote_last = false;
+  }
+
+  void read_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    read_last = true;
+  }
+
+  void write_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    wrote_last = true;
+  }
+
+  void print_final(std::string title)
+  {
+    cout << title << "\n";
+    cout << "Number of cycles w/ accesses: " << (num_reads + num_writes + num_readwrites) << "\n";
+  }
+};
+
+ArrayAccessCounter *array_counter;
+
 /**
  * A class for printing beautiful data tables.
  * It's useful for logging the information contained in tabular structures.
@@ -508,6 +562,7 @@ class PatternHistoryTable : public LRUSetAssociativeCache<PatternHistoryTableDat
 
     /* NOTE: In BINGO, address is actually block number. */
     void insert(uint64_t pc, uint64_t address, vector<bool> pattern) {
+        array_counter->write_access();
         if (this->debug_level >= 2)
             cerr << "PatternHistoryTable::insert(pc=0x" << hex << pc << ", address=0x" << address
                  << ", pattern=" << pattern_to_string(pattern) << ")" << dec << endl;
@@ -524,6 +579,7 @@ class PatternHistoryTable : public LRUSetAssociativeCache<PatternHistoryTableDat
      * @return All un-rotated patterns if matches were found, returns an empty vector otherwise
      */
     vector<vector<bool>> find(uint64_t pc, uint64_t address) {
+        array_counter->read_access();
         if (this->debug_level >= 2)
             cerr << "PatternHistoryTable::find(pc=0x" << hex << pc << ", address=0x" << address << ")" << dec << endl;
         uint64_t key = this->build_key(pc, address);
@@ -1071,6 +1127,7 @@ void CACHE::l1d_prefetcher_initialize() {
     L1D_PREF::prefetchers = vector<L1D_PREF::Bingo>(
         NUM_CPUS, L1D_PREF::Bingo(REGION_SIZE >> LOG2_BLOCK_SIZE, MIN_ADDR_WIDTH, MAX_ADDR_WIDTH, PC_WIDTH, FT_SIZE,
                       AT_SIZE, PHT_SIZE, PHT_WAYS, PF_STREAMER_SIZE, L1D_PREF::DEBUG_LEVEL));
+    array_counter = new ArrayAccessCounter();
 }
 
 void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type) {
@@ -1110,4 +1167,6 @@ void CACHE::l1d_prefetcher_cache_fill(
         L1D_PREF::prefetchers[i].eviction(evicted_block_number);
 }
 
-void CACHE::l1d_prefetcher_final_stats() {}
+void CACHE::l1d_prefetcher_final_stats() {
+    array_counter->print_final("BINGO ARRAY ACCESS COUNTER STATS");
+}
