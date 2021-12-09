@@ -43,6 +43,66 @@ const int32_t OFFSET[NOFFSETS] = {1,-1,2,-2,3,-3,4,-4,5,-5,6,-6,7,-7,8,-8,9,-9,1
 
 typedef long long addr_t;
 
+
+class ArrayAccessCounter
+{
+private:
+  int num_reads, num_writes, num_readwrites;
+  uint64_t last_access_cycle;
+  bool read_last, wrote_last;
+
+private:
+  void commit_access()
+  {
+    if (read_last && wrote_last)
+      num_readwrites++;
+    else if (read_last)
+      num_reads++;
+    else if (wrote_last)
+      num_writes++;
+
+    read_last = wrote_last = false;
+    last_access_cycle = current_core_cycle[0];
+  }
+
+
+public:
+  ArrayAccessCounter()
+  {
+    num_reads = num_writes = num_readwrites = 0;
+    last_access_cycle = 0;
+    read_last = wrote_last = false;
+  }
+
+  void read_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    read_last = true;
+  }
+
+  void write_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    wrote_last = true;
+  }
+
+  void print_final(std::string title)
+  {
+    cout << title << "\n"
+    cout << "Number of read accesses: " << num_reads << "\n";
+    cout << "Number of write accesses: " << num_writes << "\n";
+    cout << "Number of read/write accesses: " << num_readwrites << "\n";
+  }
+}
+
+ArrayAccessCounter *left_array_counter, *right_array_counter;
+
+
+
 //######################################################################################
 //                               RECENT REQUESTS TABLE (RR)
 //######################################################################################
@@ -82,12 +142,16 @@ class RRTable {
     {
       uint32_t hash = get_left_hash(lineaddr);
       recent_request[0][hash] = get_tag(lineaddr);
+
+      left_array_counter.write_access();
     }
 
     void insert_right(addr_t lineaddr)
     {
       uint32_t hash = get_right_hash(lineaddr);
       recent_request[1][hash] = get_tag(lineaddr);
+
+      right_array_counter.write_access();
     }
 
     uint32_t hit(addr_t lineaddr)
@@ -95,6 +159,10 @@ class RRTable {
       uint32_t left_hash = get_left_hash(lineaddr);
       uint32_t right_hash = get_right_hash(lineaddr);
       uint32_t tag = get_tag(lineaddr);
+
+      left_array_counter.read_access();
+      right_array_counter.read_access();
+
       return (recent_request[0][left_hash] == tag) || (recent_request[1][right_hash] == tag);
     }
 };
@@ -339,6 +407,7 @@ class OffsetScore
       addr_t testlineaddr = lineaddr - testoffset;
       bool same_page = (((lineaddr) ^ (testlineaddr)) >> 6) == 0;
 
+      num_read_access++;
       if (same_page && rr_table->hit(testlineaddr))
       {
         score[curr_idx]++; //current line would've likely been prefetched successfully w/ that offset 
@@ -529,10 +598,11 @@ vector<BestOffsetPrefetcher> my_prefetchers;
 //                               DPC2 INTERFACE
 //######################################################################################
 
-
 void CACHE::l2c_prefetcher_initialize()
 {
   my_prefetchers = vector<BestOffsetPrefetcher>(NUM_CPUS, BestOffsetPrefetcher());
+  left_array_counter = new ArrayAccessCounter();
+  right_array_counter = new ArrayAccessCounter();
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
@@ -561,4 +631,6 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 void CACHE::l2c_prefetcher_final_stats()
 {
   cout << "CPU " << cpu << " L2C best offset prefetcher final stats" << endl;
+  left_array_counter.print_final("LEFT ARRAY ACCESS COUNTER");
+  right_array_counter.print_final("RIGHT ARRAY ACCESS COUNTER");
 }
