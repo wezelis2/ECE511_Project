@@ -99,7 +99,7 @@ public:
   }
 }
 
-ArrayAccessCounter *left_array_counter, *right_array_counter;
+ArrayAccessCounter left_array_counter, right_array_counter;
 
 
 
@@ -601,8 +601,8 @@ vector<BestOffsetPrefetcher> my_prefetchers;
 void CACHE::l2c_prefetcher_initialize()
 {
   my_prefetchers = vector<BestOffsetPrefetcher>(NUM_CPUS, BestOffsetPrefetcher());
-  left_array_counter = new ArrayAccessCounter();
-  right_array_counter = new ArrayAccessCounter();
+  //left_array_counter = new ArrayAccessCounter();
+  //right_array_counter = new ArrayAccessCounter();
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
