@@ -405,7 +405,6 @@ class OffsetScore
       addr_t testlineaddr = lineaddr - testoffset;
       bool same_page = (((lineaddr) ^ (testlineaddr)) >> 6) == 0;
 
-      num_read_access++;
       if (same_page && rr_table->hit(testlineaddr))
       {
         score[curr_idx]++; //current line would've likely been prefetched successfully w/ that offset 
