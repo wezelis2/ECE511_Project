@@ -92,7 +92,7 @@ public:
 
   void print_final(std::string title)
   {
-    cout << title << "\n"
+    cout << title << "\n";
     cout << "Number of read accesses: " << num_reads << "\n";
     cout << "Number of write accesses: " << num_writes << "\n";
     cout << "Number of read/write accesses: " << num_readwrites << "\n";
