@@ -141,7 +141,7 @@ class RRTable {
       uint32_t hash = get_left_hash(lineaddr);
       recent_request[0][hash] = get_tag(lineaddr);
 
-      left_array_counter.write_access();
+      left_array_counter->write_access();
     }
 
     void insert_right(addr_t lineaddr)
@@ -149,7 +149,7 @@ class RRTable {
       uint32_t hash = get_right_hash(lineaddr);
       recent_request[1][hash] = get_tag(lineaddr);
 
-      right_array_counter.write_access();
+      right_array_counter->write_access();
     }
 
     uint32_t hit(addr_t lineaddr)
@@ -158,8 +158,8 @@ class RRTable {
       uint32_t right_hash = get_right_hash(lineaddr);
       uint32_t tag = get_tag(lineaddr);
 
-      left_array_counter.read_access();
-      right_array_counter.read_access();
+      left_array_counter->read_access();
+      right_array_counter->read_access();
 
       return (recent_request[0][left_hash] == tag) || (recent_request[1][right_hash] == tag);
     }
@@ -628,6 +628,6 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 void CACHE::l2c_prefetcher_final_stats()
 {
   cout << "CPU " << cpu << " L2C best offset prefetcher final stats" << endl;
-  left_array_counter.print_final("LEFT ARRAY ACCESS COUNTER");
-  right_array_counter.print_final("RIGHT ARRAY ACCESS COUNTER");
+  left_array_counter->print_final("LEFT ARRAY ACCESS COUNTER");
+  right_array_counter->print_final("RIGHT ARRAY ACCESS COUNTER");
 }
