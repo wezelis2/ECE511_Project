@@ -72,6 +72,7 @@ public:
     num_reads = num_writes = num_readwrites = 0;
     last_access_cycle = 0;
     read_last = wrote_last = false;
+    test = 0;
   }
 
   void read_access()
