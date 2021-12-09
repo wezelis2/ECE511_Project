@@ -47,10 +47,10 @@ typedef long long addr_t;
 class ArrayAccessCounter
 {
 private:
-  int num_reads, num_writes, num_readwrites;
-  uint64_t last_access_cycle;
+  uint64_t num_reads, num_writes, num_readwrites, last_access_cycle;
   bool read_last, wrote_last;
 
+  uint64_t test;
 private:
   void commit_access()
   {
@@ -80,6 +80,7 @@ public:
       commit_access();
 
     read_last = true;
+    test++;
   }
 
   void write_access()
@@ -88,6 +89,7 @@ public:
       commit_access();
 
     wrote_last = true;
+    test++;
   }
 
   void print_final(std::string title)
@@ -96,6 +98,7 @@ public:
     cout << "Number of read accesses: " << num_reads << "\n";
     cout << "Number of write accesses: " << num_writes << "\n";
     cout << "Number of read/write accesses: " << num_readwrites << "\n";
+    cout << "TEST: " << test << "\n";
   }
 };
 
