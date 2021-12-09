@@ -18,6 +18,27 @@
 #define IP_TRACKER_COUNT 1024
 #define PREFETCH_DEGREE 3
 
+class ArrayAccessCounter
+{
+private:
+  uint64_t num_reads, num_writes, num_readwrites, last_access_cycle;
+  bool read_last, wrote_last;
+
+private:
+  void commit_access()
+  {
+    if (read_last && wrote_last)
+      num_readwrites++;
+    else if (read_last)
+      num_reads++;
+    else if (wrote_last)
+      num_writes++;
+
+    read_last = wrote_last = false;
+    last_access_cycle = current_core_cycle[0];
+  }
+
+
 public:
   ArrayAccessCounter()
   {
