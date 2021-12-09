@@ -50,7 +50,6 @@ private:
   uint64_t num_reads, num_writes, num_readwrites, last_access_cycle;
   bool read_last, wrote_last;
 
-  uint64_t test;
 private:
   void commit_access()
   {
@@ -72,7 +71,6 @@ public:
     num_reads = num_writes = num_readwrites = 0;
     last_access_cycle = 0;
     read_last = wrote_last = false;
-    test = 0;
   }
 
   void read_access()
@@ -81,7 +79,6 @@ public:
       commit_access();
 
     read_last = true;
-    test++;
   }
 
   void write_access()
@@ -90,16 +87,12 @@ public:
       commit_access();
 
     wrote_last = true;
-    test++;
   }
 
   void print_final(std::string title)
   {
     cout << title << "\n";
-    cout << "Number of read accesses: " << num_reads << "\n";
-    cout << "Number of write accesses: " << num_writes << "\n";
-    cout << "Number of read/write accesses: " << num_readwrites << "\n";
-    cout << "TEST: " << test << "\n";
+    cout << "Number of cycles w/ accesses: " << (num_reads + num_writes + num_readwrites) << "\n";
   }
 };
 
