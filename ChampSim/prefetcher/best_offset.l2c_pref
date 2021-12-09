@@ -97,7 +97,9 @@ public:
     cout << "Number of write accesses: " << num_writes << "\n";
     cout << "Number of read/write accesses: " << num_readwrites << "\n";
   }
-}
+};
+
+ArrayAccessCounter *left_array_counter, *right_array_counter;
 
 //######################################################################################
 //                               RECENT REQUESTS TABLE (RR)
@@ -588,8 +590,6 @@ class BestOffsetPrefetcher
 };
 
 vector<BestOffsetPrefetcher> my_prefetchers;
-ArrayAccessCounter *left_array_counter, *right_array_counter;
-
 
 //######################################################################################
 //                               DPC2 INTERFACE
