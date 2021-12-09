@@ -1127,7 +1127,7 @@ void CACHE::l1d_prefetcher_initialize() {
     L1D_PREF::prefetchers = vector<L1D_PREF::Bingo>(
         NUM_CPUS, L1D_PREF::Bingo(REGION_SIZE >> LOG2_BLOCK_SIZE, MIN_ADDR_WIDTH, MAX_ADDR_WIDTH, PC_WIDTH, FT_SIZE,
                       AT_SIZE, PHT_SIZE, PHT_WAYS, PF_STREAMER_SIZE, L1D_PREF::DEBUG_LEVEL));
-    array_counter = new ArrayAccessCounter();
+    L1D_PREF::array_counter = new L1D_PREF::ArrayAccessCounter();
 }
 
 void CACHE::l1d_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type) {
@@ -1168,5 +1168,5 @@ void CACHE::l1d_prefetcher_cache_fill(
 }
 
 void CACHE::l1d_prefetcher_final_stats() {
-    array_counter->print_final("BINGO ARRAY ACCESS COUNTER STATS");
+    L1D_PREF::array_counter->print_final("BINGO ARRAY ACCESS COUNTER STATS");
 }
