@@ -21,20 +21,20 @@ module best_offset_prefetcher #(
 	//bank 0 signals
 	output 		logic 					read_bank_0,
 	output 		logic 					write_bank_0,
-	output 		logic 	[WIDTH - 1:0] 	data_bank_0,
+	output 		logic 	[WIDTH - 1:0] 	data_i_bank_0,
 	output 		logic 	[WIDTH - 1:0]	read_address_bank_0,
 	input 		logic 					hit_bank_0,				
-	input	 	logic 					data_bank_0,
+	input	 	logic 					data_o_bank_0,
 	input 		logic 					valid_bank_0,
 
 
 	//bank 1 signals
 	output 		logic 					read_bank_1,
 	output 		logic 					write_bank_1,
-	output 		logic 	[WIDTH - 1:0] 	data_bank_1,
+	output 		logic 	[WIDTH - 1:0] 	data_i_bank_1,
 	output 		logic 	[WIDTH - 1:0]	read_address_bank_1,
 	input 		logic 					hit_bank_1,				
-	input	 	logic 					data_bank_1,
+	input	 	logic 					data_o_bank_1,
 	input 		logic 					valid_bank_1,
 
 	//circular queue signals
@@ -127,18 +127,18 @@ module best_offset_prefetcher #(
 	//######################################################################################
 	assign read_bank_0 = read_left;
 	assign write_bank_0 = write_left;
-	assign data_bank_0 = data_left;
+	assign data_i_bank_0 = data_left;
 	assign read_address_bank_0 = read_address_left;
 	assign hit_left = hit_bank_0;	
-	assign data_left_out = data_bank_0;
+	assign data_o_left_out = data_bank_0;
 	assign valid_left = valid_bank_0;
 
 	assign read_bank_1 = read_right;
 	assign write_bank_1 = write_right;
-	assign data_bank_1 = data_right;
+	assign data_i_bank_1 = data_right;
 	assign read_address_bank_1 = read_address_right;
 	assign hit_right = hit_bank_1;	
-	assign data_right_out = data_bank_1;
+	assign data_o_right_out = data_bank_1;
 	assign valid_right = valid_bank_1;
 
 	assign cq_enq = delay_queue_enq;
