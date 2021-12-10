@@ -144,8 +144,8 @@ module best_offset_prefetcher #(
 	assign cq_enq = delay_queue_enq;
 	assign cq_deq = 1'b1;
 	assign cq_in = delay_queue_in;
-	assign delay_queue_in = cq_empty;
-	assign delay_queue_empty = cq_full;
+	assign delay_queue_empty = cq_empty;
+	assign delay_queue_full = cq_full;
 	assign delay_queue_ready = cq_ready;
 	assign delay_queue_out = cq_out;
 
