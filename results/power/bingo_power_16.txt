@@ -10,7 +10,7 @@ Report : power
         -analysis_effort low
 Design : bingo_prefetcher
 Version: Q-2019.12-SP2
-Date   : Tue Nov 30 02:25:45 2021
+Date   : Tue Nov 30 04:26:23 2021
 ****************************************
 
 
@@ -32,12 +32,12 @@ Power-specific unit information :
     Leakage Power Units = 1nW
 
 
-  Cell Internal Power  =  36.1799 mW   (94%)
-  Net Switching Power  =   2.4433 mW    (6%)
+  Cell Internal Power  = 287.5736 mW   (91%)
+  Net Switching Power  =  27.0265 mW    (9%)
                          ---------
-Total Dynamic Power    =  38.6232 mW  (100%)
+Total Dynamic Power    = 314.6001 mW  (100%)
 
-Cell Leakage Power     = 651.1088 uW
+Cell Leakage Power     =   7.8936 mW
 
 
                  Internal         Switching           Leakage            Total
@@ -47,11 +47,9 @@ io_pad             0.0000            0.0000            0.0000            0.0000 
 memory             0.0000            0.0000            0.0000            0.0000  (   0.00%)
 black_box          0.0000            0.0000            0.0000            0.0000  (   0.00%)
 clock_network      0.0000            0.0000            0.0000            0.0000  (   0.00%)
-register          33.4632            0.2223        2.5295e+05           33.9385  (  86.41%)
+register         267.8107            0.2563        2.0896e+06          270.1562  (  83.76%)
 sequential         0.0000            0.0000            0.0000            0.0000  (   0.00%)
-combinational      2.7176            2.2210        3.9816e+05            5.3367  (  13.59%)
+combinational     19.7990           26.7682        5.8039e+06           52.3730  (  16.24%)
 --------------------------------------------------------------------------------------------------
-Total             36.1808 mW         2.4433 mW     6.5111e+05 nW        39.2751 mW
+Total            287.6097 mW        27.0245 mW     7.8936e+06 nW       322.5293 mW
 1
-
-2:34 AM

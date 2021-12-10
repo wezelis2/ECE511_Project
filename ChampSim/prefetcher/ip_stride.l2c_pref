@@ -18,6 +18,60 @@
 #define IP_TRACKER_COUNT 1024
 #define PREFETCH_DEGREE 3
 
+class ArrayAccessCounter
+{
+private:
+  uint64_t num_reads, num_writes, num_readwrites, last_access_cycle;
+  bool read_last, wrote_last;
+
+private:
+  void commit_access()
+  {
+    if (read_last && wrote_last)
+      num_readwrites++;
+    else if (read_last)
+      num_reads++;
+    else if (wrote_last)
+      num_writes++;
+
+    read_last = wrote_last = false;
+    last_access_cycle = current_core_cycle[0];
+  }
+
+
+public:
+  ArrayAccessCounter()
+  {
+    num_reads = num_writes = num_readwrites = 0;
+    last_access_cycle = 0;
+    read_last = wrote_last = false;
+  }
+
+  void read_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    read_last = true;
+  }
+
+  void write_access()
+  {
+    if (last_access_cycle != current_core_cycle[0])
+      commit_access();
+
+    wrote_last = true;
+  }
+
+  void print_final(std::string title)
+  {
+    cout << title << "\n";
+    cout << "Number of cycles w/ accesses: " << (num_reads + num_writes + num_readwrites) << "\n";
+  }
+};
+
+ArrayAccessCounter *array_counter;
+
 class IP_TRACKER {
   public:
     // the IP we're tracking
@@ -47,10 +101,14 @@ void CACHE::l2c_prefetcher_initialize()
     cout << "CPU " << cpu << " L2C IP-based stride prefetcher" << endl;
     for (int i=0; i<IP_TRACKER_COUNT; i++)
         trackers[i].lru = i;
+
+    array_counter = new ArrayAccessCounter();
 }
 
 uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache_hit, uint8_t type, uint32_t metadata_in)
 {
+    array_counter->read_access();
+
     // check for a tracker hit
     uint64_t cl_addr = addr >> LOG2_BLOCK_SIZE;
 
@@ -62,6 +120,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
 
     // this is a new IP that doesn't have a tracker yet, so allocate one
     if (index == IP_TRACKER_COUNT) {
+        array_counter->write_access();
 
         for (index=0; index<IP_TRACKER_COUNT; index++) {
             if (trackers[index].lru == (IP_TRACKER_COUNT-1))
@@ -126,6 +185,7 @@ uint32_t CACHE::l2c_prefetcher_operate(uint64_t addr, uint64_t ip, uint8_t cache
         }
     }
 
+    array_counter->write_access();
     trackers[index].last_cl_addr = cl_addr;
     trackers[index].last_stride = stride;
 
@@ -146,4 +206,5 @@ uint32_t CACHE::l2c_prefetcher_cache_fill(uint64_t addr, uint32_t set, uint32_t 
 void CACHE::l2c_prefetcher_final_stats()
 {
     cout << "CPU " << cpu << " L2C PC-based stride prefetcher final stats" << endl;
+    array_counter->print_final("ARRAY ACCESS COUNTER STATS");
 }

@@ -1,0 +1,30 @@
+report_area
+ 
+****************************************
+Report : area
+Design : bingo_prefetcher
+Version: Q-2019.12-SP2
+Date   : Tue Nov 30 21:28:07 2021
+****************************************
+
+Library(s) Used:
+
+    gscl45nm (File: /home/saransh2/ece511/ECE511_Project/techlib/gscl45nm.db)
+
+Number of ports:                        90703
+Number of nets:                        504321
+Number of cells:                       427611
+Number of combinational cells:         402177
+Number of sequential cells:             24953
+Number of macros/black boxes:               0
+Number of buf/inv:                     171073
+Number of references:                     356
+
+Combinational area:             875349.599819
+Buf/Inv area:                   253314.994856
+Noncombinational area:          199077.524883
+Macro/Black Box area:                0.000000
+Net Interconnect area:      undefined  (No wire load specified)
+
+Total cell area:               1074427.124702
+Total area:                 undefined

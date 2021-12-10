@@ -35,7 +35,7 @@ module bingo_prefetcher #(
 	localparam  int 	FT_LRU_WIDTH 			= 	$clog2(FT_NUM_WAYS);
 
 	// pattern history tableslocalparams
-	localparam  int 	PHT_NUM_SETS 			= 	16;
+	localparam  int 	PHT_NUM_SETS 			= 	32;
 	localparam 	int 	PHT_NUM_WAYS 			=  	16;
 	localparam 	int 	PHT_TAG_WIDTH 			= 	32 - $clog2(PHT_NUM_SETS);
 	localparam  int 	PHT_LRU_WIDTH 			= 	$clog2(PHT_NUM_WAYS);
